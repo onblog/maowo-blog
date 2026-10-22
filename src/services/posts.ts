@@ -28,27 +28,38 @@ function clampPage(page: number | undefined): number {
   return Number.isFinite(value) && value > 0 ? value : 1;
 }
 
-/** 给一批文章补上标签（一次查询，避免 N+1） */
+/**
+ * 给一批文章补上标签。
+ *
+ * ⚠️ 必须分批：D1 对单条查询的绑定参数有上限，归档页一次要处理全部已发布文章
+ * （259 篇 → 259 个 `?`），一次 IN 会直接 500。每批 50 个既安全又不慢。
+ */
+const TAG_CHUNK = 50;
+
 async function attachTags(env: Env, rows: PostRow[]): Promise<PostSummary[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const placeholders = ids.map(() => "?").join(",");
-  const { results } = await env.DB.prepare(
-    `SELECT pt.post_id, t.id, t.slug, t.name
-       FROM post_tags pt
-       JOIN tags t ON t.id = pt.tag_id
-      WHERE pt.post_id IN (${placeholders})
-      ORDER BY t.name`,
-  )
-    .bind(...ids)
-    .all<{ post_id: string; id: string; slug: string; name: string }>();
-
   const byPost = new Map<string, TagRow[]>();
-  for (const row of results) {
-    const list = byPost.get(row.post_id) ?? [];
-    list.push({ id: row.id, slug: row.slug, name: row.name });
-    byPost.set(row.post_id, list);
+
+  for (let i = 0; i < ids.length; i += TAG_CHUNK) {
+    const chunk = ids.slice(i, i + TAG_CHUNK);
+    const { results } = await env.DB.prepare(
+      `SELECT pt.post_id, t.id, t.slug, t.name
+         FROM post_tags pt
+         JOIN tags t ON t.id = pt.tag_id
+        WHERE pt.post_id IN (${chunk.map(() => "?").join(",")})
+        ORDER BY t.name`,
+    )
+      .bind(...chunk)
+      .all<{ post_id: string; id: string; slug: string; name: string }>();
+
+    for (const row of results) {
+      const list = byPost.get(row.post_id) ?? [];
+      list.push({ id: row.id, slug: row.slug, name: row.name });
+      byPost.set(row.post_id, list);
+    }
   }
+
   return rows.map((row) => ({ ...row, tags: byPost.get(row.id) ?? [] }));
 }
 
@@ -335,16 +346,23 @@ export async function siteStats(env: Env): Promise<{ posts: number; words: numbe
   };
 }
 
-/** 归档：按年月分组 */
+/**
+ * 归档：按年分组。
+ *
+ * ⚠️ 只查元数据列：归档页只需要标题与日期，`SELECT *` 会把 259 篇全文（3MB+）
+ * 一次性读进 Worker —— 文章一多直接 500。列表类查询永远不要带 content_md。
+ */
 export async function archiveGroups(
   env: Env,
-): Promise<Array<{ year: string; posts: PostSummary[] }>> {
+): Promise<Array<{ year: string; posts: PostRow[] }>> {
   const { results } = await env.DB.prepare(
-    `SELECT * FROM posts WHERE status = 'published' ORDER BY published_at DESC`,
+    `SELECT id, series_id, slug, title, '' AS content_md, excerpt, cover_image, cover_alt, lang, status,
+            pinned, views, reading_minutes, published_at, created_at, updated_at
+       FROM posts WHERE status = 'published' ORDER BY published_at DESC`,
   ).all<PostRow>();
-  const withTags = await attachTags(env, results);
-  const groups = new Map<string, PostSummary[]>();
-  for (const post of withTags) {
+  // 归档页只渲染标题与日期，不需要标签 —— 省掉一批 JOIN 查询
+  const groups = new Map<string, PostRow[]>();
+  for (const post of results) {
     const year = String(new Date(post.published_at ?? post.created_at).getUTCFullYear());
     const list = groups.get(year) ?? [];
     list.push(post);

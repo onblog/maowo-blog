@@ -19,7 +19,7 @@ export function ArchivePage({
   admin,
   groups,
   total,
-}: BaseProps & { groups: Array<{ year: string; posts: PostSummary[] }>; total: number }) {
+}: BaseProps & { groups: Array<{ year: string; posts: PostRow[] }>; total: number }) {
   return (
     <Layout
       site={site}
