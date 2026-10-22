@@ -137,6 +137,9 @@ type PostBody = {
   pinned?: boolean;
   status?: "draft" | "published";
   tags?: string;
+  series?: string | null;
+  /** 自定义发布时间（Unix 毫秒）。字段缺省 = 不改；显式 null = 清空 */
+  published_at?: number | null;
 };
 
 function normalizePostBody(body: PostBody): { ok: true; value: PostBody & { title: string; content_md: string } } | { ok: false; error: string } {
@@ -147,10 +150,24 @@ function normalizePostBody(body: PostBody): { ok: true; value: PostBody & { titl
   return { ok: true, value: { ...body, title: title.slice(0, 200), content_md: content } };
 }
 
+/** 请求体（snake_case）→ 服务层入参（camelCase）；只在这里做一次转换 */
+function toPostInput(body: PostBody & { title: string; content_md: string }) {
+  return {
+    ...body,
+    series: body.series === undefined ? undefined : body.series === null ? null : String(body.series).trim(),
+    publishedAt:
+      body.published_at === undefined
+        ? undefined
+        : typeof body.published_at === "number"
+          ? body.published_at
+          : null,
+  };
+}
+
 api.post("/admin/posts", requireAdminApi, async (c) => {
   const parsed = normalizePostBody(await c.req.json<PostBody>());
   if (!parsed.ok) return c.json({ error: parsed.error }, 400);
-  const post = await createPost(c.env, parsed.value);
+  const post = await createPost(c.env, toPostInput(parsed.value));
   return c.json({ ok: true, post }, 201);
 });
 
@@ -158,7 +175,7 @@ api.put("/admin/posts/:id", requireAdminApi, async (c) => {
   const parsed = normalizePostBody(await c.req.json<PostBody>());
   if (!parsed.ok) return c.json({ error: parsed.error }, 400);
   try {
-    const post = await updatePost(c.env, c.req.param("id"), parsed.value);
+    const post = await updatePost(c.env, c.req.param("id"), toPostInput(parsed.value));
     return c.json({ ok: true, post });
   } catch {
     return c.json({ error: "post_not_found" }, 404);
@@ -168,7 +185,7 @@ api.put("/admin/posts/:id", requireAdminApi, async (c) => {
 /** 列出全部文章（Agent 拿 id 用；后台列表页走 SSR，不依赖这里） */
 api.get("/admin/posts", requireAdminApi, async (c) => {
   const { results } = await c.env.DB.prepare(
-    "SELECT id, slug, title, status, lang, pinned, views, reading_minutes, published_at, created_at, updated_at FROM posts ORDER BY updated_at DESC LIMIT 500",
+    "SELECT id, slug, title, status, lang, pinned, views, reading_minutes, published_at, series_id, created_at, updated_at FROM posts ORDER BY COALESCE(published_at, updated_at) DESC LIMIT 500",
   ).all<Record<string, unknown>>();
   return c.json({ ok: true, posts: results });
 });

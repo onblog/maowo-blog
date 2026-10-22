@@ -4,6 +4,7 @@ import type { AppEnv } from "../types";
 import { getById, listAllForAdmin } from "../services/posts";
 import { listAll } from "../services/comments";
 import { buildAgentPrompt } from "../lib/agent-prompt";
+import { getSeriesById, listSeriesNames } from "../services/series";
 import {
   AdminCommentsPage,
   AdminEditorPage,
@@ -51,7 +52,10 @@ adminPages.get("/", async (c) => {
 adminPages.get("/new", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
-  return c.html(<AdminEditorPage {...base(c)} admin={c.get("admin")!} post={null} tags="" />);
+  const seriesNames = await listSeriesNames(c.env);
+  return c.html(
+    <AdminEditorPage {...base(c)} admin={c.get("admin")!} post={null} tags="" seriesName="" seriesNames={seriesNames} />,
+  );
 });
 
 adminPages.get("/edit/:id", async (c) => {
@@ -67,12 +71,17 @@ adminPages.get("/edit/:id", async (c) => {
     .bind(post.id)
     .all<{ name: string }>();
 
+  const series = post.series_id ? await getSeriesById(c.env, post.series_id) : null;
+  const seriesNames = await listSeriesNames(c.env);
+
   return c.html(
     <AdminEditorPage
       {...base(c)}
       admin={c.get("admin")!}
       post={post}
       tags={results.map((row) => row.name).join(", ")}
+      seriesName={series?.name ?? ""}
+      seriesNames={seriesNames}
     />,
   );
 });

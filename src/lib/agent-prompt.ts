@@ -47,6 +47,8 @@ Content-Type: application/json
 - excerpt：留空自动从正文截取
 - cover_image：封面图 URL
 - pinned：是否置顶（true / false）
+- series：合集名，留空表示不属于合集（合集页会自动出现）
+- published_at：自定义发布时间（Unix 毫秒），留空则发布时使用当前时间
 
 ## 4. 调用示例
 
@@ -109,6 +111,8 @@ Every following request must send that cookie: use -c/-b with curl.
 - excerpt: auto-extracted from the body when empty
 - cover_image: cover image URL
 - pinned: pin to top (true / false)
+- series: series name, empty means none (the series page picks it up automatically)
+- published_at: custom publish time (Unix ms); empty uses the publish moment
 
 ## 4. Examples
 

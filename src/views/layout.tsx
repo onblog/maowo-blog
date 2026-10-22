@@ -26,12 +26,13 @@ export type LayoutProps = {
   canonicalPath?: string;
   ogType?: "website" | "article";
   ogImage?: string | null;
-  activeNav?: "home" | "archive" | "tags" | "about" | "post";
+  activeNav?: "home" | "series" | "archive" | "tags" | "about" | "post";
   children: Child;
 };
 
-const NAV: Array<{ key: "home" | "archive" | "tags" | "about"; href: string; label: Parameters<typeof t>[1] }> = [
+const NAV: Array<{ key: "home" | "series" | "archive" | "tags" | "about"; href: string; label: Parameters<typeof t>[1] }> = [
   { key: "home", href: "/", label: "nav.home" },
+  { key: "series", href: "/series", label: "nav.series" },
   { key: "archive", href: "/archive", label: "nav.archive" },
   { key: "tags", href: "/tags", label: "nav.tags" },
   { key: "about", href: "/about", label: "nav.about" },
@@ -182,8 +183,8 @@ export function Layout(props: LayoutProps) {
               © {new Date().getUTCFullYear()} {site.owner_name || name} · {t(locale, "footer.reader_love")}
             </p>
             <p class="site-footer__meta">
-              <a href={`https://github.com/onblog/miao-blog`} target="_blank" rel="noopener noreferrer">
-                miao-blog
+              <a href="https://github.com/onblog/miao-blog" target="_blank" rel="noopener noreferrer">
+                @MIAO-BLOG
               </a>
               {admin ? (
                 <>

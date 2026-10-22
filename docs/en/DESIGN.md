@@ -41,7 +41,8 @@ flowchart LR
 | Table | Purpose | Notes |
 | --- | --- | --- |
 | `site` | single row (`id = 1`): names, taglines, author profile, theme, comment switch | bilingual fields side by side (`name_zh`, `name_en`) |
-| `posts` | metadata + current body | `slug` unique; `status` ∈ draft/published; `lang` for sorting neighbours |
+| `posts` | metadata + current body | `slug` unique; `status` ∈ draft/published; optional `series_id`; author-settable `published_at` |
+| `series` | collections of posts | ordered by `published_at` only — no manual order column |
 | `tags` / `post_tags` | controlled tag set | upsert by slug |
 | `comments` | flat rows + `root_id` / `parent_id` | two levels only: top-level and replies |
 | `sessions` | `sha256(token)` → kind + JSON identity | kinds: `reader` (GitHub) / `admin` |

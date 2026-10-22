@@ -273,6 +273,16 @@ export function PostPage({
         </div>
 
         <footer class="post__foot">
+          {post.series ? (
+            <a class="post-series" href={`/series/${post.series.slug}`}>
+              <span class="post-series__label">{t(locale, "post.series_belongs")}</span>
+              <span class="post-series__name">{post.series.name}</span>
+              <span class="post-series__arrow" aria-hidden="true">
+                →
+              </span>
+            </a>
+          ) : null}
+
           <div class="post__author">
             {site.owner_avatar ? (
               <img class="post__author-avatar" src={site.owner_avatar} alt="" width="56" height="56" loading="lazy" />

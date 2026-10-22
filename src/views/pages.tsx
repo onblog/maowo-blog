@@ -1,4 +1,4 @@
-import type { AdminUser, Locale, PostSummary, ReaderUser, SiteRow, ThemeName } from "../types";
+import type { AdminUser, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ThemeName } from "../types";
 import { t } from "../lib/i18n";
 import { Layout } from "./layout";
 import { formatDate } from "./format";
@@ -194,6 +194,103 @@ export function AboutPage({
           </p>
         ) : null}
       </div>
+    </Layout>
+  );
+}
+
+export function SeriesListPage({
+  site,
+  locale,
+  theme,
+  reader,
+  admin,
+  series,
+}: BaseProps & {
+  series: Array<{ slug: string; name: string; description: string | null; post_count: number }>;
+}) {
+  return (
+    <Layout
+      site={site}
+      locale={locale}
+      theme={theme}
+      reader={reader}
+      admin={admin}
+      title={t(locale, "series.title")}
+      canonicalPath="/series"
+      activeNav="series"
+    >
+      <header class="page-head">
+        <h1 class="page-head__title">{t(locale, "series.title")}</h1>
+        <p class="page-head__meta">{t(locale, "series.count", { n: series.length })}</p>
+      </header>
+
+      {series.length === 0 ? (
+        <p class="muted">{t(locale, "series.empty")}</p>
+      ) : (
+        <div class="series-list">
+          {series.map((item) => (
+            <a class="series-card" href={`/series/${item.slug}`}>
+              <span class="series-card__body">
+                <span class="series-card__name">{item.name}</span>
+                {item.description ? <span class="series-card__desc">{item.description}</span> : null}
+              </span>
+              <span class="series-card__meta">{t(locale, "series.posts", { n: item.post_count })}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </Layout>
+  );
+}
+
+export function SeriesPage({
+  site,
+  locale,
+  theme,
+  reader,
+  admin,
+  series,
+  posts,
+}: BaseProps & {
+  series: { slug: string; name: string; description: string | null };
+  posts: PostRow[];
+}) {
+  return (
+    <Layout
+      site={site}
+      locale={locale}
+      theme={theme}
+      reader={reader}
+      admin={admin}
+      title={series.name}
+      description={series.description ?? undefined}
+      canonicalPath={`/series/${series.slug}`}
+      activeNav="series"
+    >
+      <header class="page-head">
+        <div>
+          <a class="page-head__back" href="/series">
+            ← {t(locale, "series.title")}
+          </a>
+          <h1 class="page-head__title">{series.name}</h1>
+          {series.description ? <p class="page-head__desc">{series.description}</p> : null}
+        </div>
+        <p class="page-head__meta">{t(locale, "series.posts", { n: posts.length })}</p>
+      </header>
+
+      <ol class="series-posts">
+        {posts.map((post, index) => (
+          <li class="series-posts__item">
+            <span class="series-posts__index">{index + 1}</span>
+            <a class="series-posts__link" href={`/${post.slug}`}>
+              {post.title}
+            </a>
+            <time class="series-posts__date" datetime={new Date(post.published_at ?? post.created_at).toISOString()}>
+              {formatDate(post.published_at ?? post.created_at, locale)}
+            </time>
+          </li>
+        ))}
+      </ol>
     </Layout>
   );
 }

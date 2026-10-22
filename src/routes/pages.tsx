@@ -12,9 +12,10 @@ import {
   siteStats,
 } from "../services/posts";
 import { listTags, getTagBySlug } from "../services/tags";
+import { getSeriesBySlug, listSeries, listSeriesPosts } from "../services/series";
 import { buildTree, countForPost, listVisible } from "../services/comments";
 import { HomePage } from "../views/home";
-import { AboutPage, ArchivePage, NotFoundPage, TagPage, TagsPage } from "../views/pages";
+import { AboutPage, ArchivePage, NotFoundPage, SeriesListPage, SeriesPage, TagPage, TagsPage } from "../views/pages";
 import { PostPage } from "../views/post";
 
 /** 前台页面路由。`/:slug` 必须是最后一个注册的（兜底文章地址）。 */
@@ -36,6 +37,19 @@ pages.get("/", async (c) => {
   return c.html(
     <HomePage {...baseProps(c)} list={list} stats={stats} />,
   );
+});
+
+pages.get("/series", async (c) => {
+  const series = await listSeries(c.env);
+  return c.html(<SeriesListPage {...baseProps(c)} series={series} />);
+});
+
+pages.get("/series/:slug", async (c) => {
+  const slug = decodeURIComponent(c.req.param("slug"));
+  const series = await getSeriesBySlug(c.env, slug);
+  if (!series) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
+  const posts = await listSeriesPosts(c.env, series.id);
+  return c.html(<SeriesPage {...baseProps(c)} series={series} posts={posts} />);
 });
 
 pages.get("/archive", async (c) => {

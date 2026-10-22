@@ -33,8 +33,17 @@ export type AppEnv = {
 
 export type AppContext = Context<AppEnv>;
 
+export type SeriesRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  created_at: number;
+};
+
 export type PostRow = {
   id: string;
+  series_id: string | null;
   slug: string;
   title: string;
   content_md: string;
@@ -53,6 +62,7 @@ export type PostRow = {
 
 export type PostSummary = PostRow & {
   tags: TagRow[];
+  series?: SeriesRow | null;
 };
 
 export type TagRow = {

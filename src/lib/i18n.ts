@@ -11,6 +11,7 @@ import type { Locale } from "../types";
 export const messages = {
   zh: {
     "nav.home": "首页",
+    "nav.series": "合集",
     "nav.archive": "归档",
     "nav.tags": "标签",
     "nav.about": "关于",
@@ -41,6 +42,12 @@ export const messages = {
     "post.next": "下一篇",
     "post.views": "{n} 次阅读",
     "post.author": "关于作者",
+    "post.series_belongs": "本文属于合集",
+
+    "series.title": "全部合集",
+    "series.count": "{n} 个合集",
+    "series.posts": "{n} 篇",
+    "series.empty": "还没有合集。在编辑器里给文章填一个合集名就会自动创建。",
 
     "comments.title": "评论",
     "comments.count": "{n} 条评论",
@@ -101,6 +108,7 @@ export const messages = {
     "admin.dashboard.empty": "还没有文章，点右上角写第一篇。",
     "admin.dashboard.published": "已发布",
     "admin.dashboard.draft": "草稿",
+    "admin.dashboard.unpublished": "未发布",
     "admin.dashboard.delete_confirm": "确定删除这篇文章吗？不可恢复。",
     "admin.editor.title": "标题",
     "admin.editor.slug": "地址（留空自动生成）",
@@ -108,6 +116,10 @@ export const messages = {
     "admin.editor.excerpt": "摘要（留空自动截取）",
     "admin.editor.cover": "封面图地址",
     "admin.editor.tags": "标签（用逗号分隔）",
+    "admin.editor.series": "合集（可选）",
+    "admin.editor.series_placeholder": "留空表示不属于合集",
+    "admin.editor.published_at": "发布时间",
+    "admin.editor.published_at_hint": "留空则发布时使用当前时间；可填过去的日期补发旧文",
     "admin.editor.tags_placeholder": "随笔, 日记, 感想",
     "admin.editor.pin": "置顶",
     "admin.editor.save_draft": "存草稿",
@@ -165,6 +177,7 @@ export const messages = {
 
   en: {
     "nav.home": "Home",
+    "nav.series": "Series",
     "nav.archive": "Archive",
     "nav.tags": "Tags",
     "nav.about": "About",
@@ -195,6 +208,12 @@ export const messages = {
     "post.next": "Next",
     "post.views": "{n} views",
     "post.author": "About the author",
+    "post.series_belongs": "Part of",
+
+    "series.title": "All series",
+    "series.count": "{n} series",
+    "series.posts": "{n} posts",
+    "series.empty": "No series yet. Give a post a series name in the editor and it is created automatically.",
 
     "comments.title": "Comments",
     "comments.count": "{n} comments",
@@ -255,6 +274,7 @@ export const messages = {
     "admin.dashboard.empty": "No posts yet. Hit “New post” to start.",
     "admin.dashboard.published": "Published",
     "admin.dashboard.draft": "Draft",
+    "admin.dashboard.unpublished": "Not published",
     "admin.dashboard.delete_confirm": "Delete this post? This cannot be undone.",
     "admin.editor.title": "Title",
     "admin.editor.slug": "Slug (leave empty to auto-generate)",
@@ -262,6 +282,10 @@ export const messages = {
     "admin.editor.excerpt": "Excerpt (auto if empty)",
     "admin.editor.cover": "Cover image URL",
     "admin.editor.tags": "Tags (comma separated)",
+    "admin.editor.series": "Series (optional)",
+    "admin.editor.series_placeholder": "Leave empty to skip",
+    "admin.editor.published_at": "Publish time",
+    "admin.editor.published_at_hint": "Empty = use the moment you publish. Set a past date to backfill older posts.",
     "admin.editor.tags_placeholder": "notes, diary, thoughts",
     "admin.editor.pin": "Pin to top",
     "admin.editor.save_draft": "Save draft",

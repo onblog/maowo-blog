@@ -73,6 +73,22 @@
     var statusEl = document.querySelector("[data-save-status]");
     var previewEl = document.querySelector("[data-preview]");
     var contentInput = postForm.querySelector('textarea[name="content_md"]');
+    var seriesInput = postForm.querySelector('input[name="series"]');
+    var publishedInput = postForm.querySelector("[data-published-at]");
+
+    // 发布时间：库里存 UTC 毫秒，输入框要按**读者本地时区**显示
+    if (publishedInput) {
+      var utc = publishedInput.getAttribute("data-published-utc");
+      if (utc) {
+        var d = new Date(Number(utc));
+        if (!isNaN(d.getTime())) {
+          var pad = function (n) { return String(n).padStart(2, "0"); };
+          publishedInput.value =
+            d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+            "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+        }
+      }
+    }
     var titleInput = postForm.querySelector('input[name="title"]');
     var slugInput = postForm.querySelector('input[name="slug"]');
 
@@ -113,6 +129,9 @@
         lang: (postForm.querySelector('select[name="lang"]') || {}).value || "zh",
         tags: (postForm.querySelector('input[name="tags"]') || {}).value || "",
         pinned: !!((postForm.querySelector('input[name="pinned"]') || {}).checked),
+        series: seriesInput ? seriesInput.value.trim() : "",
+        // 空 = 由服务端按「发布时用当前时间 / 草稿保持空」处理
+        published_at: publishedInput && publishedInput.value ? new Date(publishedInput.value).getTime() : null,
         status: status
       };
     }
@@ -270,12 +289,50 @@
       return link.label_zh || link.label_en || "link";
     }
 
+    var dragIndex = -1;
+
     function renderLinks() {
       if (!linksList) return;
       linksList.innerHTML = "";
       links.forEach(function (link, index) {
         var li = document.createElement("li");
         li.className = "link-row";
+        // 拖动排序：拖起来 -> 经过目标高亮 -> 松手时才重排（拖拽中重建 DOM 会中断拖拽）
+        li.draggable = true;
+        li.addEventListener("dragstart", function (event) {
+          dragIndex = index;
+          li.classList.add("link-row--dragging");
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", String(index));
+          }
+        });
+        li.addEventListener("dragend", function () {
+          li.classList.remove("link-row--dragging");
+          dragIndex = -1;
+        });
+        li.addEventListener("dragover", function (event) {
+          event.preventDefault();
+          if (dragIndex !== -1 && dragIndex !== index) li.classList.add("link-row--drop-target");
+        });
+        li.addEventListener("dragleave", function () {
+          li.classList.remove("link-row--drop-target");
+        });
+        li.addEventListener("drop", function (event) {
+          event.preventDefault();
+          li.classList.remove("link-row--drop-target");
+          if (dragIndex === -1 || dragIndex === index) return;
+          var moved = links.splice(dragIndex, 1)[0];
+          links.splice(index, 0, moved);
+          dragIndex = -1;
+          renderLinks();
+        });
+
+        // 拖拽手柄：没有它用户不会知道这一行能拖
+        var handle = document.createElement("span");
+        handle.className = "link-row__handle";
+        handle.setAttribute("aria-hidden", "true");
+        handle.textContent = "⠿";
 
         var a = document.createElement("a");
         a.className = "link-row__name";
@@ -297,6 +354,7 @@
           renderLinks();
         });
 
+        li.appendChild(handle);
         li.appendChild(a);
         li.appendChild(url);
         li.appendChild(del);

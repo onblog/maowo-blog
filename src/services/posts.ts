@@ -1,6 +1,7 @@
 import { excerpt as extractExcerpt } from "../lib/markdown";
 import { readingMinutes, slugify, uniqueSlug } from "../lib/brand";
 import { siteLocale } from "../lib/i18n";
+import { getSeriesById, resolveSeries } from "./series";
 import { ulid } from "../lib/id";
 import type { Locale, PostRow, PostSummary, TagRow } from "../types";
 
@@ -11,6 +12,7 @@ export type ListOptions = {
   perPage?: number;
   lang?: Locale | null;
   tagSlug?: string | null;
+  seriesSlug?: string | null;
 };
 
 export type ListResult = {
@@ -67,6 +69,10 @@ export async function listPublished(env: Env, options: ListOptions = {}): Promis
     );
     bind.push(options.tagSlug);
   }
+  if (options.seriesSlug) {
+    where.push("series_id = (SELECT id FROM series WHERE slug = ?)");
+    bind.push(options.seriesSlug);
+  }
   const whereSql = where.join(" AND ");
 
   const countRow = await env.DB.prepare(`SELECT COUNT(*) AS n FROM posts WHERE ${whereSql}`)
@@ -99,7 +105,9 @@ export async function getPublishedBySlug(env: Env, slug: string): Promise<PostSu
     .first<PostRow>();
   if (!row) return null;
   const [withTags] = await attachTags(env, [row]);
-  return withTags ?? null;
+  if (!withTags) return null;
+  if (row.series_id) withTags.series = await getSeriesById(env, row.series_id);
+  return withTags;
 }
 
 export async function getBySlugAdmin(env: Env, slug: string): Promise<PostRow | null> {
@@ -153,6 +161,10 @@ export type PostInput = {
   pinned?: boolean;
   status?: "draft" | "published";
   tags?: string;
+  /** 合集名；留空表示不属于任何合集。懒创建。 */
+  series?: string | null;
+  /** 自定义发布时间（Unix 毫秒）；不传则发布时用当前时间，草稿保持原值 */
+  publishedAt?: number | null;
 };
 
 /** 把 "a, b，c" 拆成标签数组，去重去空 */
@@ -211,12 +223,14 @@ export async function createPost(env: Env, input: PostInput): Promise<PostRow> {
   const base = slugify(input.slug?.trim() || input.title, `post-${now.toString(36)}`);
   const slug = uniqueSlug(base, taken);
   const status = input.status ?? "draft";
-  const publishedAt = status === "published" ? now : null;
+  // 作者可以指定发布时间；没指定时，发布即当前时间、草稿为空
+  const publishedAt = input.publishedAt ?? (status === "published" ? now : null);
+  const seriesId = await resolveSeries(env, input.series);
 
   await env.DB.prepare(
     `INSERT INTO posts (id, slug, title, content_md, excerpt, cover_image, cover_alt, lang, status,
-                        pinned, views, reading_minutes, published_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+                        pinned, views, reading_minutes, published_at, series_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -231,6 +245,7 @@ export async function createPost(env: Env, input: PostInput): Promise<PostRow> {
       input.pinned ? 1 : 0,
       readingMinutes(input.content_md),
       publishedAt,
+      seriesId,
       now,
       now,
     )
@@ -251,12 +266,18 @@ export async function updatePost(env: Env, id: string, input: PostInput): Promis
   const base = slugify(input.slug?.trim() || existing.slug, `post-${now.toString(36)}`);
   const slug = base === existing.slug ? existing.slug : uniqueSlug(base, taken);
   const status = input.status ?? existing.status;
-  // 首次发布才写 published_at；之后再编辑不改它（文章的「发布于」应是第一次上线时间）
-  const publishedAt = status === "published" ? existing.published_at ?? now : existing.published_at;
+  // 作者显式给了发布时间就用它；否则首次发布补当前时间，之后再编辑不动它
+  const publishedAt =
+    input.publishedAt !== undefined
+      ? input.publishedAt
+      : status === "published"
+        ? existing.published_at ?? now
+        : existing.published_at;
+  const seriesId = await resolveSeries(env, input.series);
 
   await env.DB.prepare(
     `UPDATE posts SET slug = ?, title = ?, content_md = ?, excerpt = ?, cover_image = ?, cover_alt = ?,
-            lang = ?, status = ?, pinned = ?, reading_minutes = ?, published_at = ?, updated_at = ?
+            lang = ?, status = ?, pinned = ?, reading_minutes = ?, published_at = ?, series_id = ?, updated_at = ?
       WHERE id = ?`,
   )
     .bind(
@@ -271,6 +292,7 @@ export async function updatePost(env: Env, id: string, input: PostInput): Promis
       input.pinned ? 1 : 0,
       readingMinutes(input.content_md),
       publishedAt,
+      seriesId,
       now,
       id,
     )
@@ -296,7 +318,8 @@ export async function siteStats(env: Env): Promise<{ posts: number; words: numbe
     `SELECT
        (SELECT COUNT(*) FROM posts WHERE status = 'published') AS posts,
        (SELECT COALESCE(SUM(LENGTH(content_md)), 0) FROM posts WHERE status = 'published') AS chars,
-       (SELECT COUNT(*) FROM tags) AS tags`,
+       (SELECT COUNT(DISTINCT pt.tag_id) FROM post_tags pt
+          JOIN posts p ON p.id = pt.post_id AND p.status = 'published') AS tags`,
   ).first<{ posts: number; chars: number; tags: number }>();
   return {
     posts: row?.posts ?? 0,

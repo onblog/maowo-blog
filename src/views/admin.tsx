@@ -139,7 +139,11 @@ export function AdminPostsPage({
                   <div class="admin-post__meta">
                     <span class={`status-badge status-badge--${post.status}`}>{tag}</span>
                     <span>/{post.slug}</span>
-                    <span>{formatDate(post.updated_at, locale)}</span>
+                    <span>
+                      {post.published_at
+                        ? formatDate(post.published_at, locale)
+                        : t(locale, "admin.dashboard.unpublished")}
+                    </span>
                     <span>{t(locale, "post.views", { n: post.views })}</span>
                   </div>
                 </div>
@@ -177,6 +181,8 @@ export function AdminEditorPage({
   admin,
   post,
   tags,
+  seriesName,
+  seriesNames,
 }: {
   site: SiteRow;
   locale: Locale;
@@ -184,6 +190,8 @@ export function AdminEditorPage({
   admin: AdminUser;
   post: PostRow | null;
   tags: string;
+  seriesName: string;
+  seriesNames: string[];
 }) {
   const isNew = post === null;
   return (
@@ -233,6 +241,34 @@ export function AdminEditorPage({
             <label class="field">
               <span class="field__label">{t(locale, "admin.editor.tags")}</span>
               <input class="field__input" name="tags" value={tags} placeholder={t(locale, "admin.editor.tags_placeholder")} />
+            </label>
+
+            <label class="field">
+              <span class="field__label">{t(locale, "admin.editor.series")}</span>
+              <input
+                class="field__input"
+                name="series"
+                value={seriesName}
+                list="series-options"
+                placeholder={t(locale, "admin.editor.series_placeholder")}
+              />
+              <datalist id="series-options">
+                {seriesNames.map((name) => (
+                  <option value={name} />
+                ))}
+              </datalist>
+            </label>
+
+            <label class="field">
+              <span class="field__label">{t(locale, "admin.editor.published_at")}</span>
+              <input
+                class="field__input"
+                type="datetime-local"
+                name="published_at"
+                data-published-at
+                data-published-utc={post?.published_at ?? ""}
+              />
+              <span class="field__hint">{t(locale, "admin.editor.published_at_hint")}</span>
             </label>
 
             <label class="field">

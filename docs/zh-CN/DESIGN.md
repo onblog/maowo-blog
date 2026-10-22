@@ -38,7 +38,8 @@ flowchart LR
 | 表 | 作用 | 备注 |
 | --- | --- | --- |
 | `site` | 单行（`id = 1`）：站名、签名、作者资料、形态、评论开关 | 双语字段并排（`name_zh` / `name_en`） |
-| `posts` | 元数据 + 当前正文 | `slug` 唯一；`status` ∈ draft/published；`lang` 用于相邻文章排序 |
+| `posts` | 元数据 + 当前正文 | `slug` 唯一；`status` ∈ draft/published；可选 `series_id`；作者可指定 `published_at` |
+| `series` | 合集 | 只按 `published_at` 排序，没有手动排序列 |
 | `tags` / `post_tags` | 受控标签集 | 按 slug upsert |
 | `comments` | 平铺行 + `root_id` / `parent_id` | 只有两层：顶层与回复 |
 | `sessions` | `sha256(token)` → 类型 + 身份 JSON | 类型：`reader`（GitHub）/ `admin` |
