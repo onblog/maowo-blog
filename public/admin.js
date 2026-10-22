@@ -205,6 +205,141 @@
     });
   });
 
+  // ── 图片上传（封面 / 头像）：POST /api/admin/media → 回填 URL ──────
+  document.querySelectorAll("[data-upload-image]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var field = btn.closest(".image-field");
+      var fileInput = field && field.querySelector("[data-image-file]");
+      if (fileInput) fileInput.click();
+    });
+  });
+
+  document.querySelectorAll("[data-image-file]").forEach(function (fileInput) {
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      var field = fileInput.closest(".image-field");
+      var urlInput = field.querySelector("[data-image-url]");
+      var preview = field.querySelector("[data-image-preview]");
+      var btn = field.querySelector("[data-upload-image]");
+      var original = btn ? btn.textContent : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "上传中…";
+      }
+      var data = new FormData();
+      data.append("file", file);
+      api("/api/admin/media", { method: "POST", body: data }).then(function (res) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+        if (res.ok && res.data && res.data.url) {
+          if (urlInput) urlInput.value = res.data.url;
+          if (preview) {
+            preview.innerHTML = "";
+            var img = document.createElement("img");
+            img.src = res.data.url;
+            img.alt = "";
+            preview.appendChild(img);
+          }
+        } else {
+          window.alert("上传失败：" + ((res.data && res.data.error) || "未知错误"));
+        }
+        fileInput.value = "";
+      });
+    });
+  });
+
+  // ── 友情链接：列表 + 弹窗新增，底层仍然存 JSON ────────────────────
+  var linksEditor = document.querySelector("[data-links-editor]");
+  if (linksEditor) {
+    var linksInput = linksEditor.querySelector('input[name="owner_links"]');
+    var linksList = linksEditor.querySelector("[data-links-list]");
+    var linkDialog = document.querySelector("[data-link-dialog]");
+    var linkForm = linkDialog ? linkDialog.querySelector("[data-link-form]") : null;
+    var links = [];
+    try {
+      links = JSON.parse((linksInput && linksInput.value) || "[]");
+      if (!Array.isArray(links)) links = [];
+    } catch (e) {
+      links = [];
+    }
+
+    function linkLabel(link) {
+      return link.label_zh || link.label_en || "link";
+    }
+
+    function renderLinks() {
+      if (!linksList) return;
+      linksList.innerHTML = "";
+      links.forEach(function (link, index) {
+        var li = document.createElement("li");
+        li.className = "link-row";
+
+        var a = document.createElement("a");
+        a.className = "link-row__name";
+        a.href = link.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = linkLabel(link);
+
+        var url = document.createElement("span");
+        url.className = "link-row__url";
+        url.textContent = link.url;
+
+        var del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn btn--danger btn--sm";
+        del.textContent = "删除";
+        del.addEventListener("click", function () {
+          links.splice(index, 1);
+          renderLinks();
+        });
+
+        li.appendChild(a);
+        li.appendChild(url);
+        li.appendChild(del);
+        linksList.appendChild(li);
+      });
+      // 每次变更都同步回隐藏 input，保存时随表单一起提交
+      if (linksInput) linksInput.value = JSON.stringify(links);
+    }
+    renderLinks();
+
+    var addLinkBtn = linksEditor.querySelector("[data-add-link]");
+    if (addLinkBtn && linkDialog && linkForm) {
+      addLinkBtn.addEventListener("click", function () {
+        linkForm.reset();
+        linkDialog.showModal();
+      });
+    }
+
+    if (linkDialog) {
+      var cancelBtn = linkDialog.querySelector("[data-link-cancel]");
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", function () {
+          linkDialog.close();
+        });
+      }
+    }
+
+    if (linkForm && linkDialog) {
+      linkForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var nameInput = linkForm.querySelector('input[name="link_name"]');
+        var urlInput = linkForm.querySelector('input[name="link_url"]');
+        var name = nameInput ? nameInput.value.trim() : "";
+        var url = urlInput ? urlInput.value.trim() : "";
+        if (!name || !url) return;
+        // 单语言站点：名称只存一份（旧数据的 label_en 仍可读，保持兼容）
+        links.push({ label_zh: name, label_en: name, url: url });
+        renderLinks();
+        linkDialog.close();
+      });
+    }
+  }
+
   // ── 后台：站点设置 ───────────────────────────────────────────────────
   var settingsForm = document.querySelector("[data-settings-form]");
   if (settingsForm) {
@@ -214,6 +349,8 @@
       var payload = {};
       settingsForm.querySelectorAll("input, textarea, select").forEach(function (input) {
         if (!input.name) return;
+        // 弹窗里的字段属于链接编辑器，不进站点设置
+        if (input.closest("[data-link-dialog]")) return;
         if (input.type === "checkbox") payload[input.name] = input.checked;
         else payload[input.name] = input.value;
       });

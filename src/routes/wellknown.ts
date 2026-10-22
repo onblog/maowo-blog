@@ -30,7 +30,7 @@ function baseUrl(env: Env): string {
 
 wellKnown.get("/feed.xml", async (c) => {
   const site = await getSite(c.env);
-  const name = c.get("locale") === "zh" ? site.name_zh : site.name_en;
+  const name = site.name;
   const { results } = await c.env.DB.prepare(
     "SELECT * FROM posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 30",
   ).all<PostRow>();
@@ -55,7 +55,7 @@ wellKnown.get("/feed.xml", async (c) => {
   <channel>
     <title>${escapeXml(name)}</title>
     <link>${escapeXml(baseUrl(c.env))}</link>
-    <description>${escapeXml(c.get("locale") === "zh" ? site.tagline_zh : site.tagline_en)}</description>
+    <description>${escapeXml(site.tagline)}</description>
     <language>${c.get("locale") === "zh" ? "zh-CN" : "en"}</language>
     <atom:link href="${escapeXml(baseUrl(c.env))}/feed.xml" rel="self" type="application/rss+xml" />
 ${items}

@@ -1863,6 +1863,10 @@ button {
   flex-wrap: wrap;
   padding-top: 6px;
 }
+/* 保存按钮靠右：状态文案贴着它，左侧留给开关 */
+.admin-form__actions > .btn {
+  margin-left: auto;
+}
 
 /* 评论管理 */
 .admin-comments {
@@ -1904,6 +1908,126 @@ button {
   gap: 10px;
   flex-wrap: wrap;
   font-size: 13px;
+}
+
+/* 图片字段：URL + 上传 */
+.image-field__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.image-field__row .field__input {
+  flex: 1;
+  min-width: 0;
+}
+.image-field__preview {
+  margin-top: 8px;
+}
+.image-field__preview img {
+  width: 128px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--hairline);
+}
+.image-field__preview--round img {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+}
+
+/* 友情链接编辑器 */
+.links-editor {
+  border: 2px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px 18px;
+  max-width: 860px;
+}
+.links-editor__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.links-editor__title {
+  margin: 0 0 3px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.links-editor__hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.links-editor__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+}
+.link-row__name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.link-row__name:hover {
+  color: var(--accent-deep);
+}
+.link-row__url {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 添加链接的弹窗 */
+.link-dialog {
+  border: 2px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: calc(100% - 40px);
+  max-width: 420px;
+  box-shadow: var(--shadow-float);
+}
+.link-dialog::backdrop {
+  background: rgb(20 18 16 / 45%);
+  backdrop-filter: blur(2px);
+}
+.link-dialog__form {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+.link-dialog__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.link-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 /* 迁移页：Agent 提示词面板 */

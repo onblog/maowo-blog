@@ -6,24 +6,19 @@ import type { SiteRow } from "../types";
  */
 const FALLBACK: SiteRow = {
   id: 1,
-  name_zh: "猫窝博客",
-  name_en: "Miao Blog",
-  tagline_zh: "一个安静写东西的地方",
-  tagline_en: "A quiet corner for long-form writing",
+  name: "猫窝博客",
+  tagline: "一个安静写东西的地方",
   owner_name: "Miao",
-  owner_bio_zh: "",
-  owner_bio_en: "",
+  owner_bio: "",
   owner_avatar: null,
   owner_github: null,
   owner_email: null,
   owner_location: null,
   owner_links: "[]",
-  default_locale: "zh",
   theme: "cute",
   accent: null,
   comments_enabled: 1,
-  seo_description_zh: "",
-  seo_description_en: "",
+  seo_description: "",
   created_at: 0,
   updated_at: 0,
 };
@@ -38,24 +33,19 @@ export async function getSite(env: Env): Promise<SiteRow> {
 }
 
 const EDITABLE = [
-  "name_zh",
-  "name_en",
-  "tagline_zh",
-  "tagline_en",
+  "name",
+  "tagline",
   "owner_name",
-  "owner_bio_zh",
-  "owner_bio_en",
+  "owner_bio",
   "owner_avatar",
   "owner_github",
   "owner_email",
   "owner_location",
   "owner_links",
-  "default_locale",
   "theme",
   "accent",
   "comments_enabled",
-  "seo_description_zh",
-  "seo_description_en",
+  "seo_description",
 ] as const;
 
 export type SitePatch = Partial<Pick<SiteRow, (typeof EDITABLE)[number]>>;

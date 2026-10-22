@@ -151,7 +151,7 @@ export function AboutPage({
   admin,
   links,
 }: BaseProps & { links: Array<{ label_zh: string; label_en: string; url: string }> }) {
-  const bio = locale === "zh" ? site.owner_bio_zh : site.owner_bio_en;
+  const bio = site.owner_bio;
   return (
     <Layout
       site={site}

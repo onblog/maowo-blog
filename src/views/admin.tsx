@@ -15,7 +15,7 @@ type Shell = {
 
 /** 后台外壳：与前台共用 token 与字体，但换成「侧栏 + 工作区」布局 */
 export function AdminShell({ site, locale, theme, admin, active, children }: Shell) {
-  const name = siteName(site, locale);
+  const name = siteName(site);
   const tabs: Array<{ key: Shell["active"]; href: string; label: Parameters<typeof t>[1] }> = [
     { key: "posts", href: "/admin", label: "admin.tab.posts" },
     { key: "comments", href: "/admin/comments", label: "admin.tab.comments" },
@@ -232,7 +232,7 @@ export function AdminEditorPage({
 
             <label class="field">
               <span class="field__label">{t(locale, "admin.editor.tags")}</span>
-              <input class="field__input" name="tags" value={tags} placeholder="Cloudflare, 随笔" />
+              <input class="field__input" name="tags" value={tags} placeholder={t(locale, "admin.editor.tags_placeholder")} />
             </label>
 
             <label class="field">
@@ -240,10 +240,12 @@ export function AdminEditorPage({
               <textarea class="field__input" name="excerpt" rows={3}>{post?.excerpt ?? ""}</textarea>
             </label>
 
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.cover")}</span>
-              <input class="field__input" name="cover_image" value={post?.cover_image ?? ""} />
-            </label>
+            <ImageField
+              label={t(locale, "admin.editor.cover")}
+              name="cover_image"
+              value={post?.cover_image ?? null}
+              locale={locale}
+            />
 
             <label class="field field--row">
               <input type="checkbox" name="pinned" checked={post?.pinned === 1} />
@@ -311,6 +313,42 @@ export function AdminCommentsPage({
   );
 }
 
+/** 图片字段：URL 输入 + 一键上传到 R2（`POST /api/admin/media`），后台各处共用这一个组件 */
+function ImageField({
+  label,
+  name,
+  value,
+  locale,
+  rounded = false,
+}: {
+  label: string;
+  name: string;
+  value: string | null;
+  locale: Locale;
+  rounded?: boolean;
+}) {
+  return (
+    <div class="field image-field">
+      <span class="field__label">{label}</span>
+      <div class="image-field__row">
+        <input class="field__input" name={name} value={value ?? ""} placeholder="https://…" data-image-url />
+        <button class="btn btn--sm" type="button" data-upload-image>
+          {t(locale, "admin.settings.upload")}
+        </button>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml"
+          hidden
+          data-image-file
+        />
+      </div>
+      <div class={`image-field__preview${rounded ? " image-field__preview--round" : ""}`} data-image-preview>
+        {value ? <img src={value} alt="" /> : null}
+      </div>
+    </div>
+  );
+}
+
 export function AdminSettingsPage({
   site,
   locale,
@@ -328,74 +366,110 @@ export function AdminSettingsPage({
       <form class="admin-form" data-settings-form>
         <div class="admin-form__grid">
           <label class="field">
-            <span class="field__label">站点名（中文）</span>
-            <input class="field__input" name="name_zh" value={site.name_zh} />
+            <span class="field__label">{t(locale, "admin.settings.name")}</span>
+            <input class="field__input" name="name" value={site.name} />
           </label>
           <label class="field">
-            <span class="field__label">Site name (English)</span>
-            <input class="field__input" name="name_en" value={site.name_en} />
+            <span class="field__label">{t(locale, "admin.settings.tagline")}</span>
+            <input class="field__input" name="tagline" value={site.tagline} />
           </label>
           <label class="field">
-            <span class="field__label">一句话简介（中文）</span>
-            <input class="field__input" name="tagline_zh" value={site.tagline_zh} />
-          </label>
-          <label class="field">
-            <span class="field__label">Tagline (English)</span>
-            <input class="field__input" name="tagline_en" value={site.tagline_en} />
-          </label>
-          <label class="field">
-            <span class="field__label">作者名</span>
+            <span class="field__label">{t(locale, "admin.settings.owner_name")}</span>
             <input class="field__input" name="owner_name" value={site.owner_name} />
           </label>
           <label class="field">
-            <span class="field__label">头像地址</span>
-            <input class="field__input" name="owner_avatar" value={site.owner_avatar ?? ""} />
-          </label>
-          <label class="field">
-            <span class="field__label">GitHub</span>
-            <input class="field__input" name="owner_github" value={site.owner_github ?? ""} />
-          </label>
-          <label class="field">
-            <span class="field__label">邮箱</span>
-            <input class="field__input" name="owner_email" value={site.owner_email ?? ""} />
-          </label>
-          <label class="field">
-            <span class="field__label">所在城市</span>
-            <input class="field__input" name="owner_location" value={site.owner_location ?? ""} />
-          </label>
-          <label class="field">
-            <span class="field__label">界面风格</span>
+            <span class="field__label">{t(locale, "admin.settings.theme")}</span>
             <select class="field__input" name="theme">
-              <option value="cute" selected={site.theme === "cute"}>cute（猫窝风格）</option>
-              <option value="minimal" selected={site.theme === "minimal"}>minimal（极简）</option>
+              <option value="cute" selected={site.theme === "cute"}>
+                {t(locale, "admin.settings.theme_cute")}
+              </option>
+              <option value="minimal" selected={site.theme === "minimal"}>
+                {t(locale, "admin.settings.theme_minimal")}
+              </option>
             </select>
           </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.github")}</span>
+            <input class="field__input" name="owner_github" value={site.owner_github ?? ""} placeholder="https://github.com/…" />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.email")}</span>
+            <input class="field__input" name="owner_email" value={site.owner_email ?? ""} type="email" />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.location")}</span>
+            <input class="field__input" name="owner_location" value={site.owner_location ?? ""} />
+          </label>
+          <ImageField
+            label={t(locale, "admin.settings.avatar")}
+            name="owner_avatar"
+            value={site.owner_avatar}
+            locale={locale}
+            rounded
+          />
         </div>
 
         <label class="field">
-          <span class="field__label">作者简介（中文）</span>
-          <textarea class="field__input" name="owner_bio_zh" rows={4}>{site.owner_bio_zh}</textarea>
+          <span class="field__label">{t(locale, "admin.settings.owner_bio")}</span>
+          <textarea class="field__input" name="owner_bio" rows={4}>
+            {site.owner_bio}
+          </textarea>
         </label>
+
         <label class="field">
-          <span class="field__label">Author bio (English)</span>
-          <textarea class="field__input" name="owner_bio_en" rows={4}>{site.owner_bio_en}</textarea>
+          <span class="field__label">{t(locale, "admin.settings.seo")}</span>
+          <textarea class="field__input" name="seo_description" rows={2}>
+            {site.seo_description}
+          </textarea>
         </label>
-        <label class="field">
-          <span class="field__label">友情链接（JSON：[{`{"label_zh":"博客","label_en":"Blog","url":"https://…"}`}]）</span>
-          <textarea class="field__input" name="owner_links" rows={3}>{site.owner_links}</textarea>
-        </label>
+
+        <section class="links-editor" data-links-editor>
+          <div class="links-editor__head">
+            <div>
+              <h2 class="links-editor__title">{t(locale, "admin.settings.links_title")}</h2>
+              <p class="muted links-editor__hint">{t(locale, "admin.settings.links_hint")}</p>
+            </div>
+            <button class="btn btn--sm" type="button" data-add-link>
+              {t(locale, "admin.settings.add_link")}
+            </button>
+          </div>
+          <ul class="links-editor__list" data-links-list />
+          <input type="hidden" name="owner_links" value={site.owner_links} />
+        </section>
 
         <div class="admin-form__actions">
           <label class="field field--row">
             <input type="checkbox" name="comments_enabled" checked={site.comments_enabled === 1} />
-            <span class="field__label">允许评论</span>
+            <span class="field__label">{t(locale, "admin.settings.comments")}</span>
           </label>
           <p class="editor__status" data-settings-status />
           <button class="btn btn--primary" type="submit">
-            {locale === "zh" ? "保存设置" : "Save"}
+            {t(locale, "admin.settings.save")}
           </button>
         </div>
       </form>
+
+      <dialog class="link-dialog" data-link-dialog>
+        <form method="dialog" class="link-dialog__form" data-link-form>
+          <h3 class="link-dialog__title">{t(locale, "admin.settings.add_link")}</h3>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.link_name")}</span>
+            <input class="field__input" name="link_name" required maxlength={20} />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.link_url")}</span>
+            <input class="field__input" name="link_url" type="url" placeholder="https://" required />
+          </label>
+          <div class="link-dialog__actions">
+            <button class="btn btn--ghost" type="button" data-link-cancel>
+              {t(locale, "admin.settings.cancel")}
+            </button>
+            <button class="btn btn--primary" type="submit">
+              {t(locale, "admin.settings.confirm")}
+            </button>
+          </div>
+        </form>
+      </dialog>
     </AdminShell>
   );
 }
@@ -429,7 +503,7 @@ export function AdminMigratePage({
       </div>
 
       <p class="muted admin-migrate__foot">{t(locale, "admin.migrate.footer")}</p>
-      <a class="btn btn--ghost" href="/api/admin/export">
+      <a class="btn" href="/api/admin/export">
         {t(locale, "admin.migrate.export")}
       </a>
     </AdminShell>

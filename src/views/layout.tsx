@@ -3,16 +3,16 @@ import { t } from "../lib/i18n";
 import { githubUrl } from "../lib/brand";
 import type { AdminUser, Locale, ReaderUser, SiteRow, ThemeName } from "../types";
 
-export function siteName(site: SiteRow, locale: Locale): string {
-  return locale === "zh" ? site.name_zh : site.name_en;
+export function siteName(site: SiteRow): string {
+  return site.name;
 }
 
-export function siteTagline(site: SiteRow, locale: Locale): string {
-  return locale === "zh" ? site.tagline_zh : site.tagline_en;
+export function siteTagline(site: SiteRow): string {
+  return site.tagline;
 }
 
-export function ownerBio(site: SiteRow, locale: Locale): string {
-  return locale === "zh" ? site.owner_bio_zh : site.owner_bio_en;
+export function ownerBio(site: SiteRow): string {
+  return site.owner_bio;
 }
 
 export type LayoutProps = {
@@ -93,9 +93,9 @@ function GithubIcon() {
 
 export function Layout(props: LayoutProps) {
   const { site, locale, theme, reader, admin, title, description, canonicalPath, ogType, ogImage } = props;
-  const name = siteName(site, locale);
+  const name = siteName(site);
   const fullTitle = title ? `${title} · ${name}` : name;
-  const desc = description || siteTagline(site, locale) || (locale === "zh" ? site.seo_description_zh : site.seo_description_en);
+  const desc = description || siteTagline(site) || site.seo_description;
 
   return (
     <html lang={locale === "zh" ? "zh-CN" : "en"} data-theme="light" data-style={theme}>

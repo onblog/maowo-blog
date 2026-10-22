@@ -211,7 +211,7 @@ export function PostPage({
   comments: CommentNode[];
   commentCount: number;
 }) {
-  const name = siteName(site, locale);
+  const name = siteName(site);
   const published = formatDate(post.published_at ?? post.created_at, locale);
 
   return (
@@ -280,7 +280,7 @@ export function PostPage({
             <div class="post__author-text">
               <p class="post__author-name">{site.owner_name || name}</p>
               <p class="post__author-bio">
-                {locale === "zh" ? site.owner_bio_zh : site.owner_bio_en}
+                {site.owner_bio}
               </p>
             </div>
           </div>

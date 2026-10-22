@@ -15,9 +15,9 @@ export type HomeProps = {
 };
 
 export function HomePage({ site, locale, theme, reader, admin, list, stats }: HomeProps) {
-  const name = siteName(site, locale);
-  const tagline = siteTagline(site, locale);
-  const description = tagline || (locale === "zh" ? site.seo_description_zh : site.seo_description_en);
+  const name = siteName(site);
+  const tagline = siteTagline(site);
+  const description = tagline || (site.seo_description);
 
   return (
     <Layout

@@ -210,23 +210,18 @@ api.put("/admin/site", requireAdminApi, async (c) => {
   const body = await c.req.json<Record<string, unknown>>();
   const patch: Record<string, string | number | null> = {};
   const stringFields = [
-    "name_zh",
-    "name_en",
-    "tagline_zh",
-    "tagline_en",
+    "name",
+    "tagline",
     "owner_name",
-    "owner_bio_zh",
-    "owner_bio_en",
+    "owner_bio",
     "owner_avatar",
     "owner_github",
     "owner_email",
     "owner_location",
     "owner_links",
-    "default_locale",
     "theme",
     "accent",
-    "seo_description_zh",
-    "seo_description_en",
+    "seo_description",
   ];
   for (const field of stringFields) {
     if (typeof body[field] === "string") patch[field] = (body[field] as string).slice(0, 2000);

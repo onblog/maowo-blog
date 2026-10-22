@@ -83,26 +83,26 @@ export type CommentNode = CommentRow & {
   children: CommentNode[];
 };
 
+/**
+ * 站点资料：单行表。
+ * 语言由部署时的 SITE_LOCALE 决定，所以站名/签名/简介/SEO 描述都只有**一套**文案，
+ * 不再有 `_zh` / `_en` 两列 —— 后台也就不会出现让人困惑的双语输入框。
+ */
 export type SiteRow = {
   id: number;
-  name_zh: string;
-  name_en: string;
-  tagline_zh: string;
-  tagline_en: string;
+  name: string;
+  tagline: string;
   owner_name: string;
-  owner_bio_zh: string;
-  owner_bio_en: string;
+  owner_bio: string;
   owner_avatar: string | null;
   owner_github: string | null;
   owner_email: string | null;
   owner_location: string | null;
   owner_links: string;
-  default_locale: string;
   theme: string;
   accent: string | null;
   comments_enabled: number;
-  seo_description_zh: string;
-  seo_description_en: string;
+  seo_description: string;
   created_at: number;
   updated_at: number;
 };
