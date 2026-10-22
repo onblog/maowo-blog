@@ -229,6 +229,26 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  // ── 友链图标：favicon 抓不到就回退成首字母 ──────────────────────────
+  (function () {
+    function swapToFallback(img) {
+      var span = document.createElement("span");
+      span.className = img.className + " link-card__avatar--fallback";
+      span.textContent = img.getAttribute("data-fallback") || "?";
+      if (img.parentNode) img.parentNode.replaceChild(span, img);
+    }
+    document.querySelectorAll("[data-favicon]").forEach(function (img) {
+      // 图片可能在脚本执行前就已经失败了
+      if (img.complete && img.naturalWidth === 0) {
+        swapToFallback(img);
+        return;
+      }
+      img.addEventListener("error", function () {
+        swapToFallback(img);
+      });
+    });
+  })();
+
   // ── 评论 ─────────────────────────────────────────────────────────────
   var form = document.querySelector("[data-comment-form]");
   var section = document.querySelector("[data-post-slug]");

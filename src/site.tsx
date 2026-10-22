@@ -7,6 +7,7 @@ import { adminPages } from "./routes/admin";
 import { api } from "./routes/api";
 import { authRoutes } from "./routes/auth";
 import { mediaApi, mediaFiles } from "./routes/media";
+import { favicon } from "./routes/favicon";
 import { pages } from "./routes/pages";
 import { wellKnown } from "./routes/wellknown";
 import type { AppEnv } from "./types";
@@ -37,6 +38,7 @@ export function createSiteApp() {
   app.route("/api/auth", authRoutes);
   app.route("/api", mediaApi);
   app.route("/api", api);
+  app.route("/api", favicon);
   app.route("/", mediaFiles);
   app.route("/", wellKnown);
   app.route("/admin", adminPages);

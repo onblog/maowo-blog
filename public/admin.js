@@ -603,19 +603,19 @@
         handle.setAttribute("aria-hidden", "true");
         handle.textContent = "⠿";
 
-        // 头像（没有就用首字母占位）
+        // 头像：优先用存下来的地址，否则实时抓对方 favicon，失败回退首字母
         var avatar = document.createElement("span");
         avatar.className = "link-row__avatar";
-        if (link.avatar) {
-          var avatarImg = document.createElement("img");
-          avatarImg.src = link.avatar;
-          avatarImg.alt = "";
-          avatarImg.loading = "lazy";
-          avatar.appendChild(avatarImg);
-        } else {
+        var avatarImg = document.createElement("img");
+        avatarImg.alt = "";
+        avatarImg.loading = "lazy";
+        avatarImg.src = link.avatar || "/api/favicon?url=" + encodeURIComponent(link.url);
+        avatarImg.addEventListener("error", function () {
+          if (avatarImg.parentNode) avatarImg.parentNode.removeChild(avatarImg);
           avatar.classList.add("link-row__avatar--fallback");
           avatar.textContent = (link.name || "?").slice(0, 1);
-        }
+        });
+        avatar.appendChild(avatarImg);
 
         var body = document.createElement("span");
         body.className = "link-row__body";
@@ -673,43 +673,6 @@
       }
     }
 
-    // 弹窗里的头像上传（复用同一套压缩 + 上传通道）
-    if (linkDialog) {
-      var linkUploadBtn = linkDialog.querySelector("[data-link-upload]");
-      var linkFileInput = linkDialog.querySelector("[data-link-file]");
-      var linkAvatarInput = linkDialog.querySelector("[data-link-avatar]");
-      var linkAvatarPreview = linkDialog.querySelector("[data-link-avatar-preview]");
-
-      if (linkUploadBtn && linkFileInput) {
-        linkUploadBtn.addEventListener("click", function () {
-          linkFileInput.click();
-        });
-        linkFileInput.addEventListener("change", function () {
-          var file = linkFileInput.files && linkFileInput.files[0];
-          if (!file) return;
-          var original = linkUploadBtn.textContent;
-          linkUploadBtn.disabled = true;
-          linkUploadBtn.textContent = "…";
-          uploadMedia(file, null, function (res) {
-            linkUploadBtn.disabled = false;
-            linkUploadBtn.textContent = original;
-            if (res.ok && res.data && res.data.url) {
-              if (linkAvatarInput) linkAvatarInput.value = res.data.url;
-              if (linkAvatarPreview) {
-                linkAvatarPreview.innerHTML = "";
-                var img = document.createElement("img");
-                img.src = res.data.url;
-                img.alt = "";
-                linkAvatarPreview.appendChild(img);
-              }
-            } else {
-              window.alert("上传失败：" + ((res.data && res.data.error) || "未知错误"));
-            }
-            linkFileInput.value = "";
-          });
-        });
-      }
-    }
 
     if (linkForm && linkDialog) {
       linkForm.addEventListener("submit", function (event) {
@@ -721,12 +684,8 @@
         var name = val("link_name");
         var url = val("link_url");
         if (!name || !url) return;
-        links.push({
-          name: name,
-          url: url,
-          desc: val("link_desc"),
-          avatar: val("link_avatar")
-        });
+        // 图标不再上传，前台按 URL 实时抓 favicon
+        links.push({ name: name, url: url, desc: val("link_desc"), avatar: "" });
         renderLinks();
         linkDialog.close();
       });

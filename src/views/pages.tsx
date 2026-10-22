@@ -314,7 +314,14 @@ export function LinksPage({
               {link.avatar ? (
                 <img class="link-card__avatar" src={link.avatar} alt="" loading="lazy" />
               ) : (
-                <span class="link-card__avatar link-card__avatar--fallback">{link.name.slice(0, 1)}</span>
+                <img
+                  class="link-card__avatar"
+                  src={`/api/favicon?url=${encodeURIComponent(link.url)}`}
+                  alt=""
+                  loading="lazy"
+                  data-favicon
+                  data-fallback={link.name.slice(0, 1)}
+                />
               )}
               <span class="link-card__body">
                 <span class="link-card__name">{link.name}</span>

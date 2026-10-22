@@ -602,17 +602,6 @@ export function AdminSettingsPage({
             <span class="field__label">{t(locale, "admin.settings.link_desc")}</span>
             <input class="field__input" name="link_desc" maxlength={60} placeholder={t(locale, "admin.settings.link_desc_placeholder")} />
           </label>
-          <div class="field">
-            <span class="field__label">{t(locale, "admin.settings.link_avatar")}</span>
-            <div class="image-field__row">
-              <input class="field__input" name="link_avatar" placeholder="https://…" data-link-avatar />
-              <button class="btn btn--sm" type="button" data-link-upload>
-                {t(locale, "admin.settings.upload")}
-              </button>
-              <span class="image-field__thumb" data-link-avatar-preview />
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden data-link-file />
-            </div>
-          </div>
           <div class="link-dialog__actions">
             <button class="btn btn--ghost" type="button" data-link-cancel>
               {t(locale, "admin.settings.cancel")}
