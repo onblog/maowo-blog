@@ -345,8 +345,8 @@ export function AdminEditorPage({
                 name="published_at"
                 data-published-at
                 data-published-utc={post?.published_at ?? ""}
+                title={t(locale, "admin.editor.published_at")}
               />
-              <span class="field__hint">{t(locale, "admin.editor.published_at_hint")}</span>
             </label>
           </div>
 

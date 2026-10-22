@@ -1658,12 +1658,6 @@ button {
   color: var(--accent-deep);
 }
 
-.field__hint {
-  font-size: 12px;
-  color: var(--ink-muted);
-  line-height: 1.5;
-}
-
 /* ── 页脚 ──────────────────────────────────────────────────────────────── */
 .site-footer {
   border-top: 2px solid var(--hairline);
