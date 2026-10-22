@@ -968,24 +968,24 @@ button {
   /* 代码块两种主题下都是深色底，配色固定，不跟主题变量走 */
   color: #8b97a5;
 }
-.prose .code-block > .code-block__copy {
+.prose .code-block .code-block__copy {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 26px;
-  height: 24px;
+  width: 30px;
+  height: 28px;
   padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
-  /* 与语言标签同一套固定色：深色底上用亮灰，亮暗主题表现一致 */
   color: #98a2ad;
   cursor: pointer;
-  /* 只有颜色变化，不出现背景块——按钮就是一个纯图标 */
-  transition: color 0.15s ease;
+  /* 彩色图标自带配色，悬停只做轻微提亮，不加任何背景块 */
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .code-block__copy:hover {
-  color: #e6e8ea;
+  opacity: 0.82;
+  transform: scale(1.06);
 }
 .code-block__copy.is-copied {
   color: #7fbd9b;
