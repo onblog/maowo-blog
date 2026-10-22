@@ -1,7 +1,8 @@
 import type { Child } from "hono/jsx";
 import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
-import { Mascot, siteName } from "./layout";
+import { Mascot, MoonIcon, siteName, SunIcon } from "./layout";
+import { THEME_BOOT_SCRIPT } from "../lib/theme";
 import { formatDate } from "./format";
 
 type Shell = {
@@ -36,11 +37,7 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
         <meta name="robots" content="noindex, nofollow" />
         <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/styles.css" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var t=m==='dark'?'dark':m==='light'?'light':(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){}})();`,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body class="admin-body">
         <header class="admin-header">
@@ -49,6 +46,20 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
             <span class="brand__name">{name}</span>
           </a>
           <div class="admin-header__actions">
+            <button
+              class="icon-btn"
+              type="button"
+              data-theme-toggle
+              title={t(locale, "theme.to_dark")}
+              aria-label={t(locale, "theme.to_dark")}
+            >
+              <span class="theme-icon theme-icon--moon">
+                <MoonIcon />
+              </span>
+              <span class="theme-icon theme-icon--sun">
+                <SunIcon />
+              </span>
+            </button>
             <a class="btn btn--ghost" href="/">
               {locale === "zh" ? "查看站点" : "View site"}
             </a>

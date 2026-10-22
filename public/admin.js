@@ -2,6 +2,26 @@
 (function () {
   "use strict";
 
+  // ── 颜色模式：与前台同一套优先级，选择存在同一个 localStorage 键 ──
+  var COLOR_KEY = "miao:color";
+
+  function applyTheme(value) {
+    document.documentElement.dataset.theme = value;
+    try {
+      localStorage.setItem(COLOR_KEY, value);
+    } catch (e) {}
+  }
+
+  function currentTheme() {
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  }
+
+  document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      applyTheme(currentTheme() === "dark" ? "light" : "dark");
+    });
+  });
+
   function api(path, options) {
     return fetch(path, options).then(function (res) {
       return res.json().then(

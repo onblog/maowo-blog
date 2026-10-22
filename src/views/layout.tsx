@@ -1,6 +1,7 @@
 import type { Child } from "hono/jsx";
 import { t } from "../lib/i18n";
 import { githubUrl } from "../lib/brand";
+import { THEME_BOOT_SCRIPT } from "../lib/theme";
 import type { AdminUser, Locale, ReaderUser, SiteRow, ColorMode } from "../types";
 
 export function siteName(site: SiteRow): string {
@@ -136,11 +137,7 @@ export function Layout(props: LayoutProps) {
         <link rel="alternate" type="application/rss+xml" title={`${name} · RSS`} href="/feed.xml" />
         <link rel="stylesheet" href="/styles.css" />
         {/* 主题必须在样式表之前决定，否则暗色用户会先看到一帧白屏 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var s=localStorage.getItem('miao:color');var t;if(s==='light'||s==='dark'){t=s;}else if(m==='dark'){t='dark';}else if(m==='light'){t='light';}else{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         <a class="skip-link" href="#main">
