@@ -314,12 +314,15 @@
             window.location.reload();
             return;
           }
+          var error = result.data && result.data.error;
           var message =
-            result.data && result.data.error === "too_fast"
+            error === "too_fast"
               ? "发得有点快，歇一会儿再来～"
-              : result.data && result.data.error === "unauthorized"
-                ? "登录已过期，请重新登录"
-                : "发表失败，请稍后再试";
+              : error === "daily_limit"
+                ? "今天的评论已经到上限啦，明天再来吧～"
+                : error === "unauthorized"
+                  ? "登录已过期，请重新登录"
+                  : "发表失败，请稍后再试";
           setStatus(message, "error");
           if (submitBtn) {
             submitBtn.disabled = false;

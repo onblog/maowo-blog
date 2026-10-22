@@ -5,7 +5,7 @@ import { safeUrl, timingSafeEqual } from "../lib/html";
 import { createSession, deleteSession, pruneExpiredSessions } from "../lib/session";
 import { clearAdminCookie, setAdminCookie } from "../lib/session-cookie";
 import { requireAdminApi } from "../middleware/guards";
-import { COMMENT_COOLDOWN_SECONDS, createComment, lastCommentAt, remove, setStatus } from "../services/comments";
+import { COMMENT_COOLDOWN_SECONDS, DAILY_COMMENT_LIMIT, countToday, createComment, lastCommentAt, remove, setStatus } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
 import { renderMarkdown } from "../lib/markdown";
 import { getSite, updateSite } from "../services/site";
@@ -71,6 +71,12 @@ api.post("/comments", async (c) => {
   const last = await lastCommentAt(c.env, reader.githubId);
   if (last && Date.now() - last < COMMENT_COOLDOWN_SECONDS * 1000) {
     return c.json({ error: "too_fast", retryAfter: COMMENT_COOLDOWN_SECONDS }, 429);
+  }
+
+  // 全站每日上限：防脚本把评论区刷爆
+  const todayCount = await countToday(c.env);
+  if (todayCount >= DAILY_COMMENT_LIMIT) {
+    return c.json({ error: "daily_limit", limit: DAILY_COMMENT_LIMIT, count: todayCount }, 429);
   }
 
   const website = body.website ? safeUrl(body.website) : null;

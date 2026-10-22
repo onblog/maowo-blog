@@ -3,6 +3,22 @@ import type { CommentNode, CommentRow, ReaderUser } from "../types";
 
 /** 评论冷却：同一个 GitHub 账号两次提交的最小间隔（秒） */
 export const COMMENT_COOLDOWN_SECONDS = 10;
+
+/**
+ * 全站每天最多接受的评论条数。
+ * 单人博客一天几十条评论已属异常，100 是防脚本刷屏的兜底；正常写作远到不了。
+ */
+export const DAILY_COMMENT_LIMIT = 100;
+
+/** 今天（UTC）已收到的评论条数，用于每日上限判断 */
+export async function countToday(env: Env): Promise<number> {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE created_at >= ?")
+    .bind(start.getTime())
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
 export const COMMENT_MAX_CHARS = 3000;
 
 export async function listVisible(env: Env, postId: string): Promise<CommentRow[]> {
