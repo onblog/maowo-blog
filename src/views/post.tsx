@@ -230,11 +230,6 @@ export function PostPage({
     >
       <article class="post">
         <header class="post__head">
-          <div class="post__breadcrumb">
-            <a href="/">{name}</a>
-            <span aria-hidden="true">/</span>
-            <span>{post.lang === "zh" ? t(locale, "nav.home") : t(locale, "nav.home")}</span>
-          </div>
           <h1 class="post__title">{post.title}</h1>
           <div class="post__meta">
             <time datetime={new Date(post.published_at ?? post.created_at).toISOString()}>{published}</time>

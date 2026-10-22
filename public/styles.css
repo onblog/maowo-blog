@@ -735,22 +735,6 @@ button {
   margin: 0 auto 34px;
 }
 
-.post__breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ink-muted);
-  margin-bottom: 14px;
-}
-.post__breadcrumb a {
-  color: var(--ink-muted);
-  text-decoration: none;
-}
-.post__breadcrumb a:hover {
-  color: var(--accent-deep);
-}
-
 .post__title {
   margin: 0 0 16px;
   font-size: clamp(30px, 5vw, 44px);
