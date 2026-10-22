@@ -452,14 +452,21 @@ function ImageField({
   locale: Locale;
   rounded?: boolean;
 }) {
+  // 圆形（头像）把小预览放在输入框同一行，避免它单独占一行把网格撑高；
+  // 封面这类大图仍放在下方展示。
   return (
-    <div class="field image-field">
+    <div class={`field image-field${rounded ? " image-field--inline" : ""}`}>
       <span class="field__label">{label}</span>
       <div class="image-field__row">
         <input class="field__input" name={name} value={value ?? ""} placeholder="https://…" data-image-url />
         <button class="btn btn--sm" type="button" data-upload-image>
           {t(locale, "admin.settings.upload")}
         </button>
+        {rounded ? (
+          <span class="image-field__thumb" data-image-preview>
+            {value ? <img src={value} alt="" /> : null}
+          </span>
+        ) : null}
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml"
@@ -467,9 +474,11 @@ function ImageField({
           data-image-file
         />
       </div>
-      <div class={`image-field__preview${rounded ? " image-field__preview--round" : ""}`} data-image-preview>
-        {value ? <img src={value} alt="" /> : null}
-      </div>
+      {rounded ? null : (
+        <div class="image-field__preview" data-image-preview>
+          {value ? <img src={value} alt="" /> : null}
+        </div>
+      )}
     </div>
   );
 }

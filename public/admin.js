@@ -47,6 +47,67 @@
     }
   });
 
+  // ── 上传前压缩：Canvas -> WebP q=0.92，长边限 2560 ─────────────────
+  // 纯前端完成，不占 Worker 的 CPU（免费版每请求只有 10ms）。
+  // SVG 是矢量、GIF 是动图，Canvas 会毁掉它们的特性，因此原样上传。
+  var COMPRESS_MIN_BYTES = 100 * 1024;
+  var COMPRESS_MAX_SIDE = 2560;
+  var COMPRESS_QUALITY = 0.92;
+
+  function compressImage(file) {
+    return new Promise(function (resolve) {
+      if (!/^image\//.test(file.type)) return resolve(file);
+      if (file.type === "image/svg+xml" || file.type === "image/gif") return resolve(file);
+      if (file.size < COMPRESS_MIN_BYTES) return resolve(file);
+
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(objectUrl);
+        var width = img.naturalWidth;
+        var height = img.naturalHeight;
+        if (!width || !height) return resolve(file);
+
+        var scale = Math.min(1, COMPRESS_MAX_SIDE / Math.max(width, height));
+        var targetW = Math.round(width * scale);
+        var targetH = Math.round(height * scale);
+
+        var canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        canvas.toBlob(
+          function (blob) {
+            // 压完反而更大就保留原图
+            if (!blob || blob.size >= file.size) return resolve(file);
+            var name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+            resolve(new File([blob], name, { type: "image/webp" }));
+          },
+          "image/webp",
+          COMPRESS_QUALITY
+        );
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function uploadMedia(file, onUploading, onDone) {
+    compressImage(file).then(function (optimized) {
+      var data = new FormData();
+      data.append("file", optimized);
+      return api("/api/admin/media", { method: "POST", body: data });
+    }).then(onDone, function (err) {
+      onDone({ ok: false, data: { error: (err && err.message) || "网络异常" } });
+    });
+  }
+
   function api(path, options) {
     return fetch(path, options).then(function (res) {
       return res.json().then(
@@ -251,9 +312,8 @@
         var original = uploadBtn.textContent;
         uploadBtn.disabled = true;
         uploadBtn.textContent = "…";
-        var data = new FormData();
-        data.append("file", file);
-        api("/api/admin/media", { method: "POST", body: data }).then(function (res) {
+        // 同样先压缩再上传（WebP 0.92），与图片字段走同一条链路
+        uploadMedia(file, null, function (res) {
           uploadBtn.disabled = false;
           uploadBtn.textContent = original;
           if (res.ok && res.data && res.data.url && input) {
@@ -455,11 +515,9 @@
       var original = btn ? btn.textContent : "";
       if (btn) {
         btn.disabled = true;
-        btn.textContent = "上传中…";
+        btn.textContent = "处理中…";
       }
-      var data = new FormData();
-      data.append("file", file);
-      api("/api/admin/media", { method: "POST", body: data }).then(function (res) {
+      uploadMedia(file, null, function (res) {
         if (btn) {
           btn.disabled = false;
           btn.textContent = original;
