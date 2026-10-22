@@ -2,6 +2,30 @@
 (function () {
   "use strict";
 
+  // ── 颜色模式（读者行为）──────────────────────────────────────────────
+  // 优先级：读者的手动选择（localStorage）> 站点默认（data-color-mode）> 系统偏好。
+  // 手动选择后就用它，不再跟站点或系统变化；清掉 localStorage 即回到默认。
+  var STORAGE_KEY = "miao:color";
+
+  function applyTheme(value) {
+    document.documentElement.dataset.theme = value;
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch (e) {
+      /* 隐私模式下写不进去，不影响本次会话 */
+    }
+  }
+
+  function currentTheme() {
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  }
+
+  document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      applyTheme(currentTheme() === "dark" ? "light" : "dark");
+    });
+  });
+
   // ── 评论 ─────────────────────────────────────────────────────────────
   var form = document.querySelector("[data-comment-form]");
   var section = document.querySelector("[data-post-slug]");

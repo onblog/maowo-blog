@@ -60,6 +60,34 @@ function Mascot({ size = 30 }: { size?: number }) {
 
 
 
+
+function SunIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+}
+
 function RssIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -110,7 +138,7 @@ export function Layout(props: LayoutProps) {
         {/* 主题必须在样式表之前决定，否则暗色用户会先看到一帧白屏 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var t=m==='dark'?'dark':m==='light'?'light':(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){}})();`,
+            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var s=localStorage.getItem('miao:color');var t;if(s==='light'||s==='dark'){t=s;}else if(m==='dark'){t='dark';}else if(m==='light'){t='light';}else{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
           }}
         />
       </head>
@@ -135,6 +163,21 @@ export function Layout(props: LayoutProps) {
               ))}
             </nav>
             <div class="header-actions">
+              {/* 读者行为：手动切换亮/暗，覆盖方式写在 localStorage，优先级高于站点默认 */}
+              <button
+                class="icon-btn"
+                type="button"
+                data-theme-toggle
+                title={t(locale, "theme.to_dark")}
+                aria-label={t(locale, "theme.to_dark")}
+              >
+                <span class="theme-icon theme-icon--moon">
+                  <MoonIcon />
+                </span>
+                <span class="theme-icon theme-icon--sun">
+                  <SunIcon />
+                </span>
+              </button>
               {site.owner_github ? (
                 <a
                   class="icon-btn"
@@ -183,4 +226,4 @@ export function Layout(props: LayoutProps) {
   );
 }
 
-export { Mascot, GithubIcon, RssIcon };
+export { Mascot, GithubIcon, RssIcon, MoonIcon, SunIcon };

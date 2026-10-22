@@ -69,6 +69,8 @@ export const messages = {
     "comments.failed": "发表失败，请稍后再试",
     "comments.body_required": "评论不能为空",
 
+    "theme.to_light": "切换到亮色",
+    "theme.to_dark": "切换到暗色",
     "lang.switch": "English",
     "lang.current": "中文",
 
@@ -251,6 +253,8 @@ export const messages = {
     "comments.failed": "Failed to post, please retry",
     "comments.body_required": "Comment cannot be empty",
 
+    "theme.to_light": "Switch to light",
+    "theme.to_dark": "Switch to dark",
     "lang.switch": "中文",
     "lang.current": "English",
 
