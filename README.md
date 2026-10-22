@@ -20,6 +20,8 @@
 
 </div>
 
+![Miao Blog home page](docs/images/home.png)
+
 ---
 
 ## Why another blog engine?
