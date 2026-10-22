@@ -284,6 +284,8 @@ export function excerpt(source: string, max = 140): string {
   const text = stripped
     .split("\n")
     .filter((line) => !isTableLine(line))
+    // 正文开头的一级标题常与文章标题重复，摘要里不应该再出现一次
+    .filter((line) => !/^[ \t]{0,3}#[ \t]+/.test(line))
     .join("\n")
     // 注意用 [ \t] 而不是 \s：\s 会连换行一起吃掉，段与段之间的空行就消失了
     .replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm, "")

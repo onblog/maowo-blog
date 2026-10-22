@@ -182,12 +182,14 @@ svg {
   display: block;
 }
 
-a {
+/* 用 :where() 把全局链接色的特异性压到 0，这样 .btn--primary 之类的组件色不会被它盖掉
+   （踩过的坑：暗色下按钮文字被染成与背景同色，看不见）。 */
+:where(a) {
   color: var(--accent-deep);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-[data-theme="dark"] a {
+:where([data-theme="dark"]) a {
   color: var(--accent);
 }
 
@@ -427,12 +429,24 @@ button {
   padding-bottom: 72px;
 }
 
+/* hero 做成一张「卡片」：全宽两列时中间会空出一大片，
+   给一个明确的边界比靠留白更稳，也更贴「可爱」的卡片语言。 */
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 32px;
-  padding: 64px 0 48px;
+  gap: 28px;
+  margin: 34px 0 46px;
+  padding: 44px 46px;
+  background: var(--surface);
+  border: 2px solid var(--hairline);
+  border-radius: 28px;
+  box-shadow: var(--shadow-card);
+}
+[data-style="minimal"] .hero {
+  border-width: 1px;
+  border-radius: var(--radius);
+  box-shadow: none;
 }
 
 .hero__copy {
@@ -505,8 +519,8 @@ button {
 .hero__art {
   display: grid;
   place-items: center;
-  width: 220px;
-  height: 220px;
+  width: 236px;
+  height: 236px;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 40%, var(--accent-soft), transparent 68%);
 }
@@ -871,6 +885,11 @@ button {
   letter-spacing: -0.01em;
   scroll-margin-top: 92px;
 }
+.prose h1 {
+  font-size: 1.7em;
+  padding-bottom: 0.24em;
+  border-bottom: 2px solid var(--hairline);
+}
 .prose h2 {
   font-size: 1.48em;
   padding-bottom: 0.28em;
@@ -957,6 +976,7 @@ button {
   border-radius: var(--radius);
   overflow: hidden;
   border: 2px solid color-mix(in srgb, var(--code-bg) 70%, #000);
+  background: var(--code-bg);
 }
 .code-block__head {
   display: flex;
@@ -973,10 +993,11 @@ button {
   text-transform: uppercase;
   color: var(--code-comment);
 }
-.code-block__pre {
+.prose .code-block > .code-block__pre {
   margin: 0;
   border: none;
   border-radius: 0;
+  background: var(--code-bg);
 }
 
 /* highlight.js token 配色（两种主题共用深色代码面） */
@@ -1811,7 +1832,7 @@ button {
   font-family: var(--font-mono);
   font-size: 13.5px;
   line-height: 1.75;
-  min-height: 340px;
+  min-height: 460px;
   resize: vertical;
   white-space: pre;
   overflow-wrap: normal;
@@ -1905,7 +1926,7 @@ button {
 @media (max-width: 820px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
-    padding-top: 44px;
+    padding: 30px 24px;
     gap: 6px;
   }
   .hero__art {

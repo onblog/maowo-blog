@@ -28,6 +28,9 @@ export const messages = {
     "home.stats.posts": "{n} 篇",
     "home.stats.words": "{n} 万字",
     "home.stats.tags": "{n} 个标签",
+    "home.stat.posts": "篇文章",
+    "home.stat.words": "千字",
+    "home.stat.tags": "个标签",
 
     "post.toc": "本文目录",
     "post.reading_time": "{n} 分钟阅读",
@@ -153,6 +156,9 @@ export const messages = {
     "home.stats.posts": "{n} posts",
     "home.stats.words": "{n}k words",
     "home.stats.tags": "{n} tags",
+    "home.stat.posts": "posts",
+    "home.stat.words": "k words",
+    "home.stat.tags": "tags",
 
     "post.toc": "Contents",
     "post.reading_time": "{n} min read",

@@ -46,15 +46,15 @@ export function HomePage({ site, locale, theme, reader, admin, list, stats }: Ho
           </div>
           <dl class="hero__stats">
             <div class="hero__stat">
-              <dt>{t(locale, "home.stats.posts", { n: "" })}</dt>
+              <dt>{t(locale, "home.stat.posts")}</dt>
               <dd>{stats.posts}</dd>
             </div>
             <div class="hero__stat">
-              <dt>{t(locale, "home.stats.words", { n: "" })}</dt>
+              <dt>{t(locale, "home.stat.words")}</dt>
               <dd>{stats.words}</dd>
             </div>
             <div class="hero__stat">
-              <dt>{t(locale, "home.stats.tags", { n: "" })}</dt>
+              <dt>{t(locale, "home.stat.tags")}</dt>
               <dd>{stats.tags}</dd>
             </div>
           </dl>
