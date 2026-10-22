@@ -1893,55 +1893,7 @@ button {
   color: var(--ink-muted);
 }
 
-/* 编辑器 */
-.editor__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 24px;
-  align-items: start;
-}
-.editor__main {
-  display: grid;
-  gap: 14px;
-  min-width: 0;
-}
-.editor__side {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  background: var(--surface);
-  border: 2px solid var(--hairline);
-  border-radius: var(--radius);
-  position: sticky;
-  top: 24px;
-}
-.editor__preview {
-  margin-top: 6px;
-  padding: 20px 22px;
-  background: var(--surface);
-  border: 2px solid var(--hairline);
-  border-radius: var(--radius);
-}
-.editor__preview-title {
-  margin: 0 0 14px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.editor__status {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink-muted);
-}
-.editor__status--error {
-  color: var(--danger);
-}
-.editor__status--ok {
-  color: var(--ok);
-}
-
+/* 表单字段：设置页与发布弹窗共用 */
 .field {
   display: grid;
   gap: 6px;
@@ -1971,20 +1923,201 @@ button {
   outline: none;
   border-color: var(--accent);
 }
-.field__input--title {
-  font-size: 20px;
-  font-weight: 800;
-  padding: 12px 15px;
+.form-error {
+  margin: 0;
+  min-height: 1em;
+  font-size: 13px;
+  color: var(--danger);
 }
-.field__input--code {
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  line-height: 1.75;
-  min-height: 460px;
-  resize: vertical;
-  white-space: pre;
-  overflow-wrap: normal;
+.editor__status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.editor__status--error {
+  color: var(--danger);
+}
+.editor__status--ok {
+  color: var(--ok);
+}
+
+/* 编辑器：全宽大输入 + 工具栏 + 三态切换 */
+/* 编辑器页放宽：写作是核心动作，不该被 1180px 的阅读容器限制 */
+.admin-layout:has(.editor-page) {
+  max-width: 1560px;
+  grid-template-columns: 170px minmax(0, 1fr);
+}
+.editor-page {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.editor-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--hairline);
+}
+.editor-title {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  padding: 8px 4px;
+  letter-spacing: -0.01em;
+}
+.editor-title:focus {
+  outline: none;
+}
+.editor-title::placeholder {
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+.editor-head__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--hairline);
+  background: var(--surface-soft);
   overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tool {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tool:hover {
+  background: var(--surface);
+  border-color: var(--hairline);
+  color: var(--ink);
+}
+.tool--mode {
+  gap: 0;
+}
+.tool--mode span[hidden] {
+  display: none;
+}
+.tool__mono {
+  font-family: var(--font-mono);
+}
+.tool-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--hairline-strong);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+.editor-toolbar__spacer {
+  flex: 1;
+}
+.editor-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(100vh - 250px);
+  min-height: 480px;
+}
+.editor-split[data-mode="write"] {
+  grid-template-columns: 1fr;
+}
+.editor-split[data-mode="write"] .editor-preview {
+  display: none;
+}
+.editor-split[data-mode="preview"] {
+  grid-template-columns: 1fr;
+}
+.editor-split[data-mode="preview"] .editor-input {
+  display: none;
+}
+.editor-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  padding: 22px 24px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14.5px;
+  line-height: 1.85;
+  tab-size: 2;
+}
+.editor-input:focus {
+  outline: none;
+}
+.editor-preview {
+  padding: 22px 26px;
+  overflow: auto;
+  border-left: 2px solid var(--hairline);
+  background: var(--canvas);
+}
+.editor-split[data-mode="preview"] .editor-preview {
+  border-left: none;
+}
+
+/* 发布弹窗 */
+.publish-dialog {
+  border: 2px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: calc(100% - 40px);
+  max-width: 560px;
+  box-shadow: var(--shadow-float);
+}
+.publish-dialog::backdrop {
+  background: rgb(20 18 16 / 45%);
+  backdrop-filter: blur(2px);
+}
+.publish-dialog__form {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+.publish-dialog__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.publish-dialog__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.publish-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .form-error {

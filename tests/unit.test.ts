@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { messages, t } from "../src/lib/i18n";
-import { slugify, uniqueSlug, wordCount, readingMinutes, formatDate } from "../src/lib/brand";
+import { slugify, wordCount, readingMinutes, formatDate } from "../src/lib/brand";
 import { excerpt, renderMarkdown, renderMarkdownWithToc } from "../src/lib/markdown";
 
 describe("i18n", () => {
@@ -28,12 +28,6 @@ describe("slug", () => {
 
   it("英文标题转连字符", () => {
     expect(slugify("Hello, World! 2026", "f")).toBe("hello-world-2026");
-  });
-
-  it("冲突时追加序号", () => {
-    const taken = new Set(["blog", "blog-2"]);
-    expect(uniqueSlug("blog", taken)).toBe("blog-3");
-    expect(uniqueSlug("new", taken)).toBe("new");
   });
 
   it("空标题回退", () => {

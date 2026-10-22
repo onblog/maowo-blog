@@ -196,53 +196,116 @@ export function AdminEditorPage({
   const isNew = post === null;
   return (
     <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="posts">
-      <div class="admin-section-head">
-        <h1 class="admin-title">{isNew ? t(locale, "admin.dashboard.new") : t(locale, "admin.editor.title")}</h1>
-        <div class="admin-section-head__actions">
-          <a class="btn btn--ghost" href="/admin">
-            {t(locale, "admin.editor.back")}
-          </a>
-          <button class="btn" type="button" data-save-post="draft">
-            {t(locale, "admin.editor.save_draft")}
+      <div class="editor-page" data-editor-page data-post-id={post?.id ?? ""}>
+        <div class="editor-head">
+          <input
+            class="editor-title"
+            name="title"
+            value={post?.title ?? ""}
+            placeholder={t(locale, "admin.editor.title_placeholder")}
+            aria-label={t(locale, "admin.editor.title")}
+          />
+          <div class="editor-head__actions">
+            <a class="btn btn--ghost" href="/admin">
+              {t(locale, "admin.editor.back")}
+            </a>
+            <button class="btn btn--primary" type="button" data-open-publish>
+              {isNew ? t(locale, "admin.editor.publish") : t(locale, "admin.publish.title")}
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-toolbar" role="toolbar" aria-label="Markdown">
+          <button class="tool" type="button" data-cmd="bold" title={t(locale, "admin.tool.bold")}>
+            <strong>B</strong>
           </button>
-          <button class="btn btn--primary" type="button" data-save-post="published">
-            {t(locale, "admin.editor.publish")}
+          <button class="tool" type="button" data-cmd="italic" title={t(locale, "admin.tool.italic")}>
+            <em>I</em>
+          </button>
+          <button class="tool" type="button" data-cmd="code" title={t(locale, "admin.tool.code")}>
+            <span class="tool__mono">`</span>
+          </button>
+          <span class="tool-sep" aria-hidden="true" />
+          <button class="tool" type="button" data-cmd="h2" title={t(locale, "admin.tool.h2")}>
+            H2
+          </button>
+          <button class="tool" type="button" data-cmd="h3" title={t(locale, "admin.tool.h3")}>
+            H3
+          </button>
+          <span class="tool-sep" aria-hidden="true" />
+          <button class="tool" type="button" data-cmd="ul" title={t(locale, "admin.tool.ul")}>
+            •
+          </button>
+          <button class="tool" type="button" data-cmd="ol" title={t(locale, "admin.tool.ol")}>
+            1.
+          </button>
+          <button class="tool" type="button" data-cmd="quote" title={t(locale, "admin.tool.quote")}>
+            ❝
+          </button>
+          <button class="tool" type="button" data-cmd="link" title={t(locale, "admin.tool.link")}>
+            🔗
+          </button>
+          <button class="tool" type="button" data-upload-inline title={t(locale, "admin.tool.image")}>
+            🖼
+          </button>
+          <span class="editor-toolbar__spacer" />
+          <button class="tool tool--mode" type="button" data-editor-mode-toggle title={t(locale, "admin.editor.mode_toggle")}>
+            <span data-mode-icon="split" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.6" />
+                <path d="M8 2.5v11" stroke="currentColor" stroke-width="1.6" />
+              </svg>
+            </span>
+            <span data-mode-icon="preview" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1.5 8s2.4-4.2 6.5-4.2S14.5 8 14.5 8s-2.4 4.2-6.5 4.2S1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.6" />
+                <circle cx="8" cy="8" r="1.8" stroke="currentColor" stroke-width="1.6" />
+              </svg>
+            </span>
+            <span data-mode-icon="write" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2.5 13.5 3 10.8 10.6 3.2a1.6 1.6 0 0 1 2.2 0l.6.6a1.6 1.6 0 0 1 0 2.2L5.2 13 2.5 13.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+            </span>
           </button>
         </div>
+
+        <div class="editor-split" data-editor-split data-mode="split">
+          <textarea
+            class="editor-input"
+            name="content_md"
+            data-editor-input
+            spellcheck={false}
+            placeholder={t(locale, "admin.editor.content_placeholder")}
+          >
+            {post?.content_md ?? ""}
+          </textarea>
+          <div class="editor-preview prose" data-preview />
+        </div>
+
+        <input type="file" hidden data-inline-file accept="image/png,image/jpeg,image/webp,image/gif,image/avif" />
       </div>
 
-      <form class="editor" data-post-form data-post-id={post?.id ?? ""}>
-        <div class="editor__grid">
-          <div class="editor__main">
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.title")}</span>
-              <input class="field__input field__input--title" name="title" value={post?.title ?? ""} required />
-            </label>
+      <dialog class="publish-dialog" data-publish-dialog>
+        <form class="publish-dialog__form" data-publish-form>
+          <h2 class="publish-dialog__title">{t(locale, "admin.publish.title")}</h2>
 
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.content")}</span>
-              <textarea class="field__input field__input--code" name="content_md" rows={22} spellcheck={false}>
-                {post?.content_md ?? ""}
-              </textarea>
-            </label>
+          <label class="field field--row">
+            <input type="checkbox" name="draft" checked={post?.status !== "published"} />
+            <span class="field__label">{t(locale, "admin.publish.as_draft")}</span>
+          </label>
 
-            <div class="editor__preview">
-              <p class="editor__preview-title">{t(locale, "admin.editor.preview")}</p>
-              <div class="prose" data-preview />
-            </div>
-          </div>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.editor.tags")}</span>
+            <input
+              class="field__input"
+              name="tags"
+              value={tags}
+              placeholder={t(locale, "admin.editor.tags_placeholder")}
+            />
+          </label>
 
-          <aside class="editor__side">
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.slug")}</span>
-              <input class="field__input" name="slug" value={post?.slug ?? ""} placeholder="auto" />
-            </label>
-
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.tags")}</span>
-              <input class="field__input" name="tags" value={tags} placeholder={t(locale, "admin.editor.tags_placeholder")} />
-            </label>
-
+          <div class="publish-dialog__grid">
             <label class="field">
               <span class="field__label">{t(locale, "admin.editor.series")}</span>
               <input
@@ -270,28 +333,38 @@ export function AdminEditorPage({
               />
               <span class="field__hint">{t(locale, "admin.editor.published_at_hint")}</span>
             </label>
+          </div>
 
-            <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.excerpt")}</span>
-              <textarea class="field__input" name="excerpt" rows={3}>{post?.excerpt ?? ""}</textarea>
-            </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.editor.excerpt")}</span>
+            <textarea class="field__input" name="excerpt" rows={2}>
+              {post?.excerpt ?? ""}
+            </textarea>
+          </label>
 
-            <ImageField
-              label={t(locale, "admin.editor.cover")}
-              name="cover_image"
-              value={post?.cover_image ?? null}
-              locale={locale}
-            />
+          <ImageField
+            label={t(locale, "admin.editor.cover")}
+            name="cover_image"
+            value={post?.cover_image ?? null}
+            locale={locale}
+          />
 
-            <label class="field field--row">
-              <input type="checkbox" name="pinned" checked={post?.pinned === 1} />
-              <span class="field__label">{t(locale, "admin.editor.pin")}</span>
-            </label>
+          <label class="field field--row">
+            <input type="checkbox" name="pinned" checked={post?.pinned === 1} />
+            <span class="field__label">{t(locale, "admin.editor.pin")}</span>
+          </label>
 
-            <p class="editor__status" data-save-status />
-          </aside>
-        </div>
-      </form>
+          <p class="editor__status" data-save-status />
+          <div class="publish-dialog__actions">
+            <button class="btn btn--ghost" type="button" data-publish-cancel>
+              {t(locale, "admin.publish.cancel")}
+            </button>
+            <button class="btn btn--primary" type="submit">
+              {t(locale, "admin.publish.save")}
+            </button>
+          </div>
+        </form>
+      </dialog>
     </AdminShell>
   );
 }

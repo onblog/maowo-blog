@@ -43,7 +43,6 @@ Content-Type: application/json
 - content_md：Markdown 正文；不支持原生 HTML（会被转义）
 - tags：逗号分隔，最多 8 个
 - status：draft（草稿）或 published（发布）
-- slug：留空自动生成，中文标题会保留中文
 - excerpt：留空自动从正文截取
 - cover_image：封面图 URL
 - pinned：是否置顶（true / false）
@@ -107,7 +106,6 @@ Every following request must send that cookie: use -c/-b with curl.
 - content_md: Markdown body; raw HTML is not allowed (it is escaped)
 - tags: comma separated, up to 8
 - status: draft or published
-- slug: auto-generated when empty
 - excerpt: auto-extracted from the body when empty
 - cover_image: cover image URL
 - pinned: pin to top (true / false)

@@ -44,6 +44,7 @@ That is the feature.
 
 - **Markdown writing in the browser.** Server-side rendering with the *same* module the live site uses, so preview equals production.
 - **Reader-first reading experience.** 17.5px body, 1.9 line height, 720px measure, sticky table of contents, print stylesheet.
+- **Stable numeric URLs.** A post lives at `/{13-digit-timestamp}` and never changes when the title changes.
 - **Series (合集).** Group posts into a reading order that is simply publication time — no manual ordering to maintain.
 - **Custom publish dates.** Backfill old posts or schedule the date you want; created/updated timestamps stay in the database.
 - **Cute by shell, serious by content.** Rounded cards, a hand-drawn cat mascot, and two looks (`cute` / `minimal`) so a

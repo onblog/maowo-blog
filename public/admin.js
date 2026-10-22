@@ -67,83 +67,250 @@
     });
   }
 
-  // ── 编辑器：保存 / 发布 / 预览 ───────────────────────────────────────
-  var postForm = document.querySelector("[data-post-form]");
-  if (postForm) {
-    var statusEl = document.querySelector("[data-save-status]");
-    var previewEl = document.querySelector("[data-preview]");
-    var contentInput = postForm.querySelector('textarea[name="content_md"]');
-    var seriesInput = postForm.querySelector('input[name="series"]');
-    var publishedInput = postForm.querySelector("[data-published-at]");
+  // ── Markdown 编辑器 ─────────────────────────────────────────────────
+  var editorPage = document.querySelector("[data-editor-page]");
+  if (editorPage) {
+    var input = editorPage.querySelector("[data-editor-input]");
+    var preview = editorPage.querySelector("[data-preview]");
+    var split = editorPage.querySelector("[data-editor-split]");
+    var modeBtn = editorPage.querySelector("[data-editor-mode-toggle]");
+    var titleInput = editorPage.querySelector(".editor-title");
+    var inlineFile = editorPage.querySelector("[data-inline-file]");
+    var publishDialog = document.querySelector("[data-publish-dialog]");
+    var publishForm = document.querySelector("[data-publish-form]");
+    var saveStatus = document.querySelector("[data-save-status]");
 
-    // 发布时间：库里存 UTC 毫秒，输入框要按**读者本地时区**显示
-    if (publishedInput) {
-      var utc = publishedInput.getAttribute("data-published-utc");
-      if (utc) {
-        var d = new Date(Number(utc));
-        if (!isNaN(d.getTime())) {
-          var pad = function (n) { return String(n).padStart(2, "0"); };
-          publishedInput.value =
-            d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
-            "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
-        }
-      }
+    // ── 三态：边写边预览 → 只预览 → 只写 → 边写边预览；记忆在 localStorage ──
+    var MODES = ["split", "preview", "write"];
+    var mode = "split";
+    try {
+      var savedMode = localStorage.getItem("miao:editor-mode");
+      if (MODES.indexOf(savedMode) >= 0) mode = savedMode;
+    } catch (e) {}
+
+    function applyMode(next) {
+      mode = next;
+      if (split) split.setAttribute("data-mode", mode);
+      MODES.forEach(function (item) {
+        var icon = modeBtn.querySelector('[data-mode-icon="' + item + '"]');
+        if (icon) icon.hidden = item !== mode;
+      });
+      try {
+        localStorage.setItem("miao:editor-mode", mode);
+      } catch (e) {}
     }
-    var titleInput = postForm.querySelector('input[name="title"]');
-    var slugInput = postForm.querySelector('input[name="slug"]');
+    applyMode(mode);
 
-    function setStatus(text, kind) {
-      if (!statusEl) return;
-      var labels = { ok: "已保存", error: "保存失败" };
-      statusEl.textContent = text || labels[kind] || "";
-      statusEl.className = "editor__status" + (kind ? " editor__status--" + kind : "");
+    if (modeBtn) {
+      modeBtn.addEventListener("click", function () {
+        applyMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]);
+      });
     }
 
-    // 预览：交给服务端渲染，保证「预览 = 线上」（同一份 markdown-it + 高亮）
+    // ── 预览：交给服务端渲染，保证「预览 = 线上」 ──
     var previewTimer = null;
     function refreshPreview() {
-      if (!previewEl || !contentInput) return;
+      if (!input || !preview) return;
       api("/api/admin/preview", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ content_md: contentInput.value })
+        body: JSON.stringify({ content_md: input.value })
       }).then(function (result) {
-        if (result.ok && result.data && result.data.html) previewEl.innerHTML = result.data.html;
+        if (result.ok && result.data && result.data.html) preview.innerHTML = result.data.html;
       });
     }
-    if (contentInput) {
-      contentInput.addEventListener("input", function () {
+    if (input) {
+      input.addEventListener("input", function () {
         clearTimeout(previewTimer);
         previewTimer = setTimeout(refreshPreview, 350);
       });
       refreshPreview();
     }
 
-    function collect(status) {
+    // ── 工具栏命令（都建立在三个适配函数上）──
+    function replaceRange(start, end, text) {
+      var value = input.value;
+      input.value = value.slice(0, start) + text + value.slice(end);
+      var caret = start + text.length;
+      input.selectionStart = input.selectionEnd = caret;
+    }
+
+    function wrapSelection(before, after, placeholder) {
+      var start = input.selectionStart;
+      var end = input.selectionEnd;
+      var selected = input.value.slice(start, end) || placeholder;
+      replaceRange(start, end, before + selected + after);
+      input.selectionStart = start + before.length;
+      input.selectionEnd = start + before.length + selected.length;
+    }
+
+    function mapLines(fn) {
+      var value = input.value;
+      var start = input.selectionStart;
+      var end = input.selectionEnd;
+      var lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      var lineEnd = value.indexOf("\n", end);
+      if (lineEnd === -1) lineEnd = value.length;
+      var lines = value.slice(lineStart, lineEnd).split("\n");
+      var mapped = lines.map(function (line, index) {
+        return fn(line, index);
+      });
+      replaceRange(lineStart, lineEnd, mapped.join("\n"));
+    }
+
+    var COMMANDS = {
+      bold: function () {
+        wrapSelection("**", "**", "粗体");
+      },
+      italic: function () {
+        wrapSelection("*", "*", "斜体");
+      },
+      code: function () {
+        wrapSelection("`", "`", "代码");
+      },
+      h2: function () {
+        mapLines(function (line) {
+          return "## " + line.replace(/^#{1,6}\s+/, "");
+        });
+      },
+      h3: function () {
+        mapLines(function (line) {
+          return "### " + line.replace(/^#{1,6}\s+/, "");
+        });
+      },
+      ul: function () {
+        mapLines(function (line) {
+          return "- " + line.replace(/^[-*+]\s+/, "");
+        });
+      },
+      ol: function () {
+        mapLines(function (line, index) {
+          return index + 1 + ". " + line.replace(/^\d+\.\s+/, "");
+        });
+      },
+      quote: function () {
+        mapLines(function (line) {
+          return "> " + line.replace(/^>\s?/, "");
+        });
+      },
+      link: function () {
+        wrapSelection("[", "](https://)", "链接文字");
+      }
+    };
+
+    editorPage.querySelectorAll("[data-cmd]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var command = COMMANDS[btn.getAttribute("data-cmd")];
+        if (!command || !input) return;
+        command();
+        input.focus();
+        refreshPreview();
+      });
+    });
+
+    // ── 工具栏插图：上传 R2 后把 Markdown 图片语法写进光标处 ──
+    var uploadBtn = editorPage.querySelector("[data-upload-inline]");
+    if (uploadBtn && inlineFile) {
+      uploadBtn.addEventListener("click", function () {
+        inlineFile.click();
+      });
+      inlineFile.addEventListener("change", function () {
+        var file = inlineFile.files && inlineFile.files[0];
+        if (!file) return;
+        var original = uploadBtn.textContent;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "…";
+        var data = new FormData();
+        data.append("file", file);
+        api("/api/admin/media", { method: "POST", body: data }).then(function (res) {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = original;
+          if (res.ok && res.data && res.data.url && input) {
+            var alt = file.name.replace(/\.[^.]+$/, "");
+            var at = input.selectionStart;
+            var snippet = "\n![" + alt + "](" + res.data.url + ")\n";
+            replaceRange(at, input.selectionEnd, snippet);
+            input.focus();
+            refreshPreview();
+          } else {
+            window.alert("上传失败：" + ((res.data && res.data.error) || "未知错误"));
+          }
+          inlineFile.value = "";
+        });
+      });
+    }
+
+    // ── 发布时间：库里存 UTC 毫秒，输入框按本地时区显示 ──
+    function localizePublishTime() {
+      var field = document.querySelector("[data-published-at]");
+      if (!field) return;
+      var utc = field.getAttribute("data-published-utc");
+      if (!utc) return;
+      var d = new Date(Number(utc));
+      if (isNaN(d.getTime())) return;
+      var pad = function (n) {
+        return String(n).padStart(2, "0");
+      };
+      field.value =
+        d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+        "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    }
+    localizePublishTime();
+
+    // ── 发布弹窗 ──
+    var openBtn = document.querySelector("[data-open-publish]");
+    if (openBtn && publishDialog) {
+      openBtn.addEventListener("click", function () {
+        localizePublishTime();
+        publishDialog.showModal();
+      });
+    }
+    var cancelBtn = document.querySelector("[data-publish-cancel]");
+    if (cancelBtn && publishDialog) {
+      cancelBtn.addEventListener("click", function () {
+        publishDialog.close();
+      });
+    }
+
+    function collectPayload() {
+      var form = publishForm;
+      var val = function (name) {
+        var el = form.querySelector('[name="' + name + '"]');
+        return el ? el.value : "";
+      };
+      var checked = function (name) {
+        var el = form.querySelector('[name="' + name + '"]');
+        return !!(el && el.checked);
+      };
+      var published = form.querySelector('[name="published_at"]');
       return {
         title: titleInput ? titleInput.value.trim() : "",
-        slug: slugInput ? slugInput.value.trim() : "",
-        content_md: contentInput ? contentInput.value : "",
-        excerpt: (postForm.querySelector('textarea[name="excerpt"]') || {}).value || "",
-        cover_image: (postForm.querySelector('input[name="cover_image"]') || {}).value || "",
-        lang: (postForm.querySelector('select[name="lang"]') || {}).value || "zh",
-        tags: (postForm.querySelector('input[name="tags"]') || {}).value || "",
-        pinned: !!((postForm.querySelector('input[name="pinned"]') || {}).checked),
-        series: seriesInput ? seriesInput.value.trim() : "",
-        // 空 = 由服务端按「发布时用当前时间 / 草稿保持空」处理
-        published_at: publishedInput && publishedInput.value ? new Date(publishedInput.value).getTime() : null,
-        status: status
+        content_md: input ? input.value : "",
+        tags: val("tags"),
+        excerpt: val("excerpt"),
+        cover_image: val("cover_image"),
+        series: val("series"),
+        pinned: checked("pinned"),
+        status: checked("draft") ? "draft" : "published",
+        published_at: published && published.value ? new Date(published.value).getTime() : null
       };
     }
 
-    function save(status) {
-      var id = postForm.getAttribute("data-post-id");
-      var payload = collect(status);
+    function savePost() {
+      if (!publishForm) return;
+      var payload = collectPayload();
       if (!payload.title) {
-        setStatus("标题不能为空", "error");
+        if (saveStatus) {
+          saveStatus.textContent = "标题不能为空";
+          saveStatus.className = "editor__status editor__status--error";
+        }
         return;
       }
-      setStatus("保存中……");
+      var id = editorPage.getAttribute("data-post-id");
+      if (saveStatus) {
+        saveStatus.textContent = "保存中……";
+        saveStatus.className = "editor__status";
+      }
       var request = id
         ? api("/api/admin/posts/" + encodeURIComponent(id), {
             method: "PUT",
@@ -158,31 +325,44 @@
 
       request.then(function (result) {
         if (!result.ok) {
-          setStatus(result.data && result.data.error === "title_required" ? "标题不能为空" : "保存失败", "error");
+          if (saveStatus) {
+            saveStatus.textContent =
+              result.data && result.data.error === "title_required" ? "标题不能为空" : "保存失败";
+            saveStatus.className = "editor__status editor__status--error";
+          }
           return;
         }
         var post = result.data.post;
-        postForm.setAttribute("data-post-id", post.id);
-        if (slugInput) slugInput.value = post.slug;
-        setStatus("已保存", "ok");
-        // 新建成功后换成编辑态，避免重复创建
+        editorPage.setAttribute("data-post-id", post.id);
+        if (saveStatus) {
+          saveStatus.textContent = "已保存";
+          saveStatus.className = "editor__status editor__status--ok";
+        }
         if (!id) {
           history.replaceState(null, "", "/admin/edit/" + post.id);
         }
+        setTimeout(function () {
+          if (publishDialog) publishDialog.close();
+          window.location.href = "/admin/edit/" + post.id;
+        }, 500);
       });
     }
 
-    postForm.querySelectorAll("[data-save-post]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        save(btn.getAttribute("data-save-post") || "draft");
+    if (publishForm) {
+      publishForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        savePost();
       });
-    });
+    }
 
-    // ⌘S / Ctrl+S 存草稿
+    // ⌘S / Ctrl+S 也走发布弹窗，避免两种保存路径给出不同结果
     document.addEventListener("keydown", function (event) {
       if ((event.metaKey || event.ctrlKey) && event.key === "s") {
         event.preventDefault();
-        save("draft");
+        if (publishDialog) {
+          localizePublishTime();
+          publishDialog.showModal();
+        }
       }
     });
   }

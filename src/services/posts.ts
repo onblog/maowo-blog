@@ -1,5 +1,5 @@
 import { excerpt as extractExcerpt } from "../lib/markdown";
-import { readingMinutes, slugify, uniqueSlug } from "../lib/brand";
+import { readingMinutes, slugify } from "../lib/brand";
 import { siteLocale } from "../lib/i18n";
 import { getSeriesById, resolveSeries } from "./series";
 import { ulid } from "../lib/id";
@@ -181,14 +181,24 @@ export function parseTags(input: string | undefined | null): string[] {
   ).slice(0, 8);
 }
 
-async function takenSlugs(env: Env, excludeId?: string): Promise<Set<string>> {
-  const { results } = await env.DB.prepare(
-    excludeId ? "SELECT slug FROM posts WHERE id != ?" : "SELECT slug FROM posts",
-  )
-    .bind(...(excludeId ? [excludeId] : []))
-    .all<{ slug: string }>();
-  return new Set(results.map((r) => r.slug));
+/**
+ * 分配纯数字 slug：以「当前时刻毫秒」为基准，撞了就 +1。
+ *
+ * 为什么不用标题生成：中文标题转写出来是一串中文（长短不一、还随标题变动），
+ * 改个标题链接就变；而毫秒时间戳是 13 位定长数字，天然接近唯一，冲突递增即可。
+ * 分配后**永不改变** —— 改标题、改合集都不会让已分享的链接失效。
+ */
+async function allocateNumericSlug(env: Env, base: number): Promise<string> {
+  for (let i = 0; i < 1000; i += 1) {
+    const candidate = String(base + i);
+    const exists = await env.DB.prepare("SELECT 1 AS hit FROM posts WHERE slug = ?")
+      .bind(candidate)
+      .first<{ hit: number }>();
+    if (!exists) return candidate;
+  }
+  throw new Error("slug_alloc_failed");
 }
+
 
 /** 重建一篇文章的标签关联（标签本身按 slug upsert） */
 async function syncTags(env: Env, postId: string, tagNames: string[]): Promise<void> {
@@ -219,9 +229,7 @@ async function syncTags(env: Env, postId: string, tagNames: string[]): Promise<v
 export async function createPost(env: Env, input: PostInput): Promise<PostRow> {
   const now = Date.now();
   const id = ulid(now);
-  const taken = await takenSlugs(env);
-  const base = slugify(input.slug?.trim() || input.title, `post-${now.toString(36)}`);
-  const slug = uniqueSlug(base, taken);
+  const slug = await allocateNumericSlug(env, now);
   const status = input.status ?? "draft";
   // 作者可以指定发布时间；没指定时，发布即当前时间、草稿为空
   const publishedAt = input.publishedAt ?? (status === "published" ? now : null);
@@ -262,9 +270,8 @@ export async function updatePost(env: Env, id: string, input: PostInput): Promis
   if (!existing) throw new Error("post_not_found");
 
   const now = Date.now();
-  const taken = await takenSlugs(env, id);
-  const base = slugify(input.slug?.trim() || existing.slug, `post-${now.toString(36)}`);
-  const slug = base === existing.slug ? existing.slug : uniqueSlug(base, taken);
+  // 地址一经分配就不再改：标题与合集的变化与链接无关
+  const slug = existing.slug;
   const status = input.status ?? existing.status;
   // 作者显式给了发布时间就用它；否则首次发布补当前时间，之后再编辑不动它
   const publishedAt =

@@ -68,9 +68,8 @@ export function githubUrl(raw: string | null | undefined): string | null {
 /**
  * slug 生成：保留 Unicode 字母/数字（含汉字），其余转连字符。
  *
- * 中文标题**不转拼音**：不引第三方拼音库（多 200KB+ 依赖），而中文路径在浏览器、
- * 搜索引擎与 Hono 路由里都完全可用。地址栏里显示 `猫窝的第一篇` 比 `mao-wo-de-di-yi-pian`
- * 或 `post-3f9a2c` 更好认。
+ * 只用于**标签与合集**的地址。文章地址走 `allocateNumericSlug()`（纯毫秒数字），
+ * 不再由标题生成 —— 中文标题转写出来的地址长短不一，还会随标题改变。
  */
 export function slugify(input: string, fallback: string): string {
   const normalized = input.normalize("NFKC").toLowerCase();
@@ -79,12 +78,3 @@ export function slugify(input: string, fallback: string): string {
   return slug.slice(0, 80) || fallback;
 }
 
-/** 在已有 slug 集合里保证唯一：重复时追加 `-2`、`-3`…… */
-export function uniqueSlug(base: string, taken: Set<string>): string {
-  if (!taken.has(base)) return base;
-  for (let i = 2; i < 1000; i += 1) {
-    const candidate = `${base}-${i}`;
-    if (!taken.has(candidate)) return candidate;
-  }
-  return `${base}-${Date.now().toString(36)}`;
-}
