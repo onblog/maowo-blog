@@ -4,6 +4,12 @@ import type { Locale } from "../types";
  * 品牌常量：仓库、许可证、默认站点名。
  * 站点可配置项（站名/签名/作者）都在 D1 的 `site` 表里，这里只放**不可变**的东西。
  */
+/**
+ * 静态资源（styles.css / app.js / admin.js / export-zip.js）的缓存版本号。
+ * 改了这些文件就把数字 +1 —— 浏览器与边缘才会立刻换新，否则可能继续命中旧缓存。
+ */
+export const ASSET_VERSION = "3";
+
 export const BRAND = {
   repo: "onblog/miao-blog",
   repoUrl: "https://github.com/onblog/miao-blog",

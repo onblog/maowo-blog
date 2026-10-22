@@ -3,6 +3,7 @@ import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ColorMode } from 
 import { t } from "../lib/i18n";
 import { Mascot, MoonIcon, siteName, SunIcon } from "./layout";
 import { THEME_BOOT_SCRIPT } from "../lib/theme";
+import { ASSET_VERSION } from "../lib/brand";
 import { formatDate } from "./format";
 
 type Shell = {
@@ -36,7 +37,7 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
         <title>{`${t(locale, "admin.login.title")} · ${name}`}</title>
         <meta name="robots" content="noindex, nofollow" />
         <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
-        <link rel="stylesheet" href="/styles.css" />
+        <link rel="stylesheet" href={`/styles.css?v=${ASSET_VERSION}`} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body class="admin-body">
@@ -86,8 +87,8 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
         ) : (
           <main class="admin-main">{children}</main>
         )}
-        <script src="/export-zip.js" defer />
-        <script src="/admin.js" defer />
+        <script src={`/export-zip.js?v=${ASSET_VERSION}`} defer />
+        <script src={`/admin.js?v=${ASSET_VERSION}`} defer />
       </body>
     </html>
   );
