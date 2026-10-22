@@ -3,6 +3,7 @@ import type { AppEnv, Locale, ThemeName } from "../types";
 import { ADMIN_COOKIE, READER_COOKIE, THEME_COOKIE, readCookie } from "../lib/cookies";
 import { readSession } from "../lib/session";
 import { getSite } from "../services/site";
+import { siteLocale } from "../lib/i18n";
 
 /**
  * 请求上下文：站点资料 + 主题偏好 + 两种会话身份。
@@ -17,11 +18,8 @@ export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
   const site = await getSite(c.env);
   const cookieHeader = c.req.header("cookie");
 
-  // 环境变量优先；没配时退回站点表里的默认语言；再兜底中文。
-  // 注意：先转成 string 再比较 —— 绑定类型会把字面量收窄成 "zh"，与 "en" 比较会被判为无重叠。
-  const configuredLocale = String(c.env.SITE_LOCALE ?? "");
-  const locale: Locale =
-    configuredLocale === "en" ? "en" : configuredLocale === "zh" ? "zh" : site.default_locale === "en" ? "en" : "zh";
+  // 语言只认部署时的环境变量，不再有运行时切换（也不回退到站点表）。
+  const locale: Locale = siteLocale(c.env);
 
   const themeCookie = readCookie(cookieHeader, THEME_COOKIE);
   const theme: ThemeName = themeCookie === "minimal" ? "minimal" : site.theme === "minimal" ? "minimal" : "cute";

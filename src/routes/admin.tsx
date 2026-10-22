@@ -3,10 +3,11 @@ import type { Context } from "hono";
 import type { AppEnv } from "../types";
 import { getById, listAllForAdmin } from "../services/posts";
 import { listAll } from "../services/comments";
+import { buildAgentPrompt } from "../lib/agent-prompt";
 import {
   AdminCommentsPage,
   AdminEditorPage,
-  AdminImportPage,
+  AdminMigratePage,
   AdminLoginPage,
   AdminPostsPage,
   AdminSettingsPage,
@@ -89,8 +90,9 @@ adminPages.get("/settings", async (c) => {
   return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} />);
 });
 
-adminPages.get("/import", async (c) => {
+adminPages.get("/migrate", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
-  return c.html(<AdminImportPage {...base(c)} admin={c.get("admin")!} />);
+  const prompt = buildAgentPrompt(c.get("locale"), c.env.SITE_URL);
+  return c.html(<AdminMigratePage {...base(c)} admin={c.get("admin")!} prompt={prompt} />);
 });

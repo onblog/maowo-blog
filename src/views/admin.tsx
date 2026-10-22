@@ -9,7 +9,7 @@ type Shell = {
   locale: Locale;
   theme: ThemeName;
   admin: AdminUser | null;
-  active: "posts" | "comments" | "settings" | "import" | "login";
+  active: "posts" | "comments" | "settings" | "migrate" | "login";
   children: Child;
 };
 
@@ -20,7 +20,7 @@ export function AdminShell({ site, locale, theme, admin, active, children }: She
     { key: "posts", href: "/admin", label: "admin.tab.posts" },
     { key: "comments", href: "/admin/comments", label: "admin.tab.comments" },
     { key: "settings", href: "/admin/settings", label: "admin.tab.settings" },
-    { key: "import", href: "/admin/import", label: "admin.tab.import" },
+    { key: "migrate", href: "/admin/migrate", label: "admin.tab.migrate" },
   ];
 
   return (
@@ -231,14 +231,6 @@ export function AdminEditorPage({
             </label>
 
             <label class="field">
-              <span class="field__label">{t(locale, "admin.editor.lang")}</span>
-              <select class="field__input" name="lang">
-                <option value="zh" selected={post?.lang !== "en"}>中文</option>
-                <option value="en" selected={post?.lang === "en"}>English</option>
-              </select>
-            </label>
-
-            <label class="field">
               <span class="field__label">{t(locale, "admin.editor.tags")}</span>
               <input class="field__input" name="tags" value={tags} placeholder="Cloudflare, 随笔" />
             </label>
@@ -408,38 +400,38 @@ export function AdminSettingsPage({
   );
 }
 
-export function AdminImportPage({
+export function AdminMigratePage({
   site,
   locale,
   theme,
   admin,
+  prompt,
 }: {
   site: SiteRow;
   locale: Locale;
   theme: ThemeName;
   admin: AdminUser;
+  prompt: string;
 }) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="import">
-      <h1 class="admin-title">{t(locale, "admin.import.title")}</h1>
-      <p class="muted">{t(locale, "admin.import.hint")}</p>
+    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="migrate">
+      <h1 class="admin-title">{t(locale, "admin.migrate.title")}</h1>
+      <p class="muted admin-migrate__hint">{t(locale, "admin.migrate.hint")}</p>
 
-      <form class="admin-form" data-import-form enctype="multipart/form-data">
-        <label class="field">
-          <span class="field__label">{t(locale, "admin.import.choose")}</span>
-          <input class="field__input" type="file" name="file" accept=".zip,application/zip" />
-        </label>
-        <label class="field">
-          <span class="field__label">或者粘贴 Markdown</span>
-          <textarea class="field__input field__input--code" name="text" rows={10} spellcheck={false} />
-        </label>
-        <div class="admin-form__actions">
-          <p class="editor__status" data-import-status />
-          <button class="btn btn--primary" type="submit">
-            {t(locale, "admin.import.upload")}
+      <div class="agent-prompt">
+        <div class="agent-prompt__bar">
+          <span class="agent-prompt__label">{t(locale, "admin.migrate.prompt_label")}</span>
+          <button class="btn btn--sm" type="button" data-copy-prompt>
+            {t(locale, "admin.migrate.copy")}
           </button>
         </div>
-      </form>
+        <pre class="agent-prompt__body" data-prompt-content>{prompt}</pre>
+      </div>
+
+      <p class="muted admin-migrate__foot">{t(locale, "admin.migrate.footer")}</p>
+      <a class="btn btn--ghost" href="/api/admin/export">
+        {t(locale, "admin.migrate.export")}
+      </a>
     </AdminShell>
   );
 }

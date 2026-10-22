@@ -231,36 +231,27 @@
     });
   }
 
-  // ── 后台：一键迁移 ───────────────────────────────────────────────────
-  var importForm = document.querySelector("[data-import-form]");
-  if (importForm) {
-    importForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-      var statusEl = document.querySelector("[data-import-status]");
-      var formData = new FormData();
-      var file = importForm.querySelector('input[name="file"]').files[0];
-      var text = importForm.querySelector('textarea[name="text"]').value;
-      if (file) formData.append("file", file);
-      if (text) formData.append("text", text);
-
-      if (statusEl) {
-        statusEl.textContent = "导入中……";
-        statusEl.className = "editor__status";
+  // ── 后台：复制 Agent 提示词 ──────────────────────────────────────────
+  var copyBtn = document.querySelector("[data-copy-prompt]");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", function () {
+      var target = document.querySelector("[data-prompt-content]");
+      if (!target) return;
+      var text = target.textContent || "";
+      var done = function () {
+        var original = copyBtn.textContent;
+        copyBtn.textContent = "已复制";
+        setTimeout(function () {
+          copyBtn.textContent = original;
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {
+          window.prompt("复制下面的内容：", text);
+        });
+      } else {
+        window.prompt("复制下面的内容：", text);
       }
-
-      api("/api/admin/import", { method: "POST", body: formData }).then(function (result) {
-        if (!statusEl) return;
-        if (result.ok) {
-          var d = result.data;
-          statusEl.textContent =
-            "共 " + d.total + " 篇，导入 " + d.imported + " 篇，跳过 " + d.skipped + " 篇";
-          statusEl.className = "editor__status editor__status--ok";
-        } else {
-          statusEl.textContent =
-            "导入失败：" + ((result.data && (result.data.message || result.data.error)) || "未知错误");
-          statusEl.className = "editor__status editor__status--error";
-        }
-      });
     });
   }
 })();

@@ -55,6 +55,16 @@ export function readingMinutes(markdown: string): number {
   return Math.max(1, Math.round(words / 350));
 }
 
+/** 把后台填的 GitHub 值归一成可点的 URL：`onblog` / `@onblog` / `github.com/onblog` / 完整地址都认 */
+export function githubUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^github\.com\//i.test(trimmed)) return `https://${trimmed}`;
+  return `https://github.com/${trimmed.replace(/^@/, "")}`;
+}
+
 /**
  * slug 生成：保留 Unicode 字母/数字（含汉字），其余转连字符。
  *

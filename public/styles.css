@@ -1906,6 +1906,51 @@ button {
   font-size: 13px;
 }
 
+/* 迁移页：Agent 提示词面板 */
+.admin-migrate__hint {
+  max-width: 62ch;
+  line-height: 1.75;
+  margin: 0 0 20px;
+}
+.agent-prompt {
+  border: 2px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  max-width: 900px;
+}
+.agent-prompt__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface-soft);
+  border-bottom: 2px solid var(--hairline);
+}
+.agent-prompt__label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.agent-prompt__body {
+  margin: 0;
+  padding: 18px 20px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+.admin-migrate__foot {
+  max-width: 62ch;
+  line-height: 1.7;
+  margin: 18px 0 14px;
+}
+
 /* ── 响应式 ────────────────────────────────────────────────────────────── */
 @media (max-width: 980px) {
   .post__layout {

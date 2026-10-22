@@ -49,8 +49,9 @@ That is the feature.
 - **Light and dark**, decided before first paint (inline script), following the system until the reader chooses.
 - **Comments with GitHub login.** Only `read:user` is requested. **No email is stored.** Optional "your blog URL" field
   keeps the independent-blog web-ring culture (comment → return visit → backlink).
-- **One-click import** from Hexo / Hugo / Jekyll (a `.zip` of Markdown with front matter) or pasted Markdown.
-- **One-click export**: the whole site as JSON, re-importable. Moving in must not mean being locked in.
+- **Agent-ready API.** `/admin/migrate` shows one copy-pasteable prompt; Codex / Claude / WorkBuddy then write,
+  publish and migrate posts through the same `/api/admin/*` endpoints the UI uses — no second protocol.
+- **One-click export**: the whole site as JSON. Moving in must not mean being locked in.
 - **Deployment = configuration.** Language (`zh` / `en`) and admin credentials are environment variables, not runtime toggles.
 - **Only D1 + R2.** No KV, no Queues, no Durable Objects, no crons. Edge cache via the Cache API.
 - **SEO for free**: RSS with full content, sitemap, robots, canonical URLs, Open Graph tags.
@@ -113,13 +114,24 @@ Then open `/admin`, sign in with the credentials from step 3, and write your fir
 
 Tune the design in `/admin/settings`: site name (zh/en), tagline, author bio, avatar, links, `cute | minimal`, comments on/off.
 
-## Import and export
+## Migrate with an agent
 
-- **Import** — `/admin/import`. Upload a `.zip` of Markdown files (Hexo `source/_posts`, Hugo `content/posts`,
-  Jekyll `_posts`, or any folder of `.md`). Front matter `title`, `date`, `tags`, `categories`, `slug`, `draft`,
-  `excerpt` and `lang` are understood. Images are not downloaded; point them at your own URLs afterwards.
-- **Export** — `GET /api/admin/export` returns `{ site, posts: [...] }`. Posting that JSON back to `/admin/import`
-  restores everything. There is no lock-in.
+Open `/admin/migrate`, copy the prompt, replace `<ADMIN_USER>` / `<ADMIN_PASS>`, and hand it to your agent.
+The prompt only describes the site's existing HTTP API — the very endpoints `/admin` itself calls:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/admin/login` | Sign in, receive the `miao_admin` cookie |
+| `GET` | `/api/admin/posts` | List posts (id, slug, title, status) |
+| `GET` | `/api/admin/posts/:id` | Read one post with `content_md` |
+| `POST` / `PUT` | `/api/admin/posts` | Create / replace a post |
+| `DELETE` | `/api/admin/posts/:id` | Delete a post |
+| `POST` | `/api/admin/preview` | Render Markdown to HTML |
+| `GET` | `/api/admin/export` | Export every post as JSON |
+
+There is no agent-only protocol and no special token: the agent logs in like the admin page does.
+
+**Export** — `GET /api/admin/export` returns `{ site, posts: [...] }`, the whole site in one JSON file.
 
 ## Project structure
 
@@ -130,7 +142,7 @@ src/
 ├── lib/                  markdown, i18n, cookies, session, slug, formatting
 ├── middleware/           request id, guards, request context
 ├── routes/               pages, admin, api, auth, prefs, media, feed/sitemap
-├── services/             posts, comments, site, tags, github, importer
+├── services/             posts, comments, site, tags, github
 └── views/                SSR components (layout, home, post, admin)
 migrations/               D1 schema
 public/                   styles.css, app.js, admin.js, mascot + favicon
@@ -149,7 +161,7 @@ tests/                    unit tests (vitest)
 
 **Multiple authors?** No. Fork it and add a `users` table if you really need it — the schema is deliberately small.
 
-**Git as the content source?** Not supported. Content lives in D1; the one-click importer covers the migration path.
+**Git as the content source?** Not supported. Content lives in D1; the agent prompt at `/admin/migrate` covers the migration path.
 
 **Will my comments survive a move?** Comments are part of the export JSON.
 

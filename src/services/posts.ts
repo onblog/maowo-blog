@@ -1,5 +1,6 @@
 import { excerpt as extractExcerpt } from "../lib/markdown";
 import { readingMinutes, slugify, uniqueSlug } from "../lib/brand";
+import { siteLocale } from "../lib/i18n";
 import { ulid } from "../lib/id";
 import type { Locale, PostRow, PostSummary, TagRow } from "../types";
 
@@ -116,23 +117,23 @@ export async function listAllForAdmin(env: Env): Promise<PostRow[]> {
   return results;
 }
 
-/** 相邻文章（只在自己的语言内找，避免中英混排的「上一篇」跳到另一种语言） */
+/** 相邻文章：站点只有一种语言（SITE_LOCALE），直接按发布时间取 */
 export async function getNeighbours(
   env: Env,
   post: PostRow,
 ): Promise<{ prev: PostRow | null; next: PostRow | null }> {
   const publishedAt = post.published_at ?? 0;
   const prev = await env.DB.prepare(
-    `SELECT * FROM posts WHERE status = 'published' AND lang = ? AND published_at > ?
+    `SELECT * FROM posts WHERE status = 'published' AND published_at > ?
       ORDER BY published_at ASC LIMIT 1`,
   )
-    .bind(post.lang, publishedAt)
+    .bind(publishedAt)
     .first<PostRow>();
   const next = await env.DB.prepare(
-    `SELECT * FROM posts WHERE status = 'published' AND lang = ? AND published_at < ?
+    `SELECT * FROM posts WHERE status = 'published' AND published_at < ?
       ORDER BY published_at DESC LIMIT 1`,
   )
-    .bind(post.lang, publishedAt)
+    .bind(publishedAt)
     .first<PostRow>();
   return { prev, next };
 }
@@ -225,7 +226,7 @@ export async function createPost(env: Env, input: PostInput): Promise<PostRow> {
       input.excerpt?.trim() || extractExcerpt(input.content_md, 160),
       input.cover_image || null,
       input.cover_alt || null,
-      input.lang ?? "zh",
+      siteLocale(env),
       status,
       input.pinned ? 1 : 0,
       readingMinutes(input.content_md),
@@ -265,7 +266,7 @@ export async function updatePost(env: Env, id: string, input: PostInput): Promis
       input.excerpt?.trim() || extractExcerpt(input.content_md, 160),
       input.cover_image || null,
       input.cover_alt || null,
-      input.lang ?? existing.lang,
+      siteLocale(env),
       status,
       input.pinned ? 1 : 0,
       readingMinutes(input.content_md),

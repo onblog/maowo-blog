@@ -9,7 +9,7 @@ A reader-first personal blog with a browser editor. The target user is someone w
 and is tired of the build pipeline or the plugin zoo. The migration path must be short enough to try in ten minutes:
 
 1. deploy (four commands),
-2. import a zip of Markdown,
+2. hand the agent prompt from `/admin/migrate` to your coding agent,
 3. keep the URL shape (`/{slug}`).
 
 Everything that does not serve that path was cut: multi-user accounts, memberships, quotas, AI curation, tags hub,
@@ -45,7 +45,6 @@ flowchart LR
 | `tags` / `post_tags` | controlled tag set | upsert by slug |
 | `comments` | flat rows + `root_id` / `parent_id` | two levels only: top-level and replies |
 | `sessions` | `sha256(token)` → kind + JSON identity | kinds: `reader` (GitHub) / `admin` |
-| `import_runs` | audit of import operations | optional, small |
 
 Deliberate omissions: no `users` table (the author is an env var), no `email` column on comments (privacy),
 no `post_revisions` (a blog is not a wiki), no `ai_checks` (AI is optional).
@@ -70,7 +69,7 @@ Why: a personal blog has one audience. A switcher adds a cookie, a redirect rout
 every page for SEO to disambiguate — for a benefit almost nobody uses. The dictionary still ships both languages
 (`src/lib/i18n.ts`), so changing `SITE_LOCALE` and redeploying switches the whole site.
 
-`posts.lang` remains per-post so imported English articles still render and sort correctly among Chinese neighbours.
+`posts.lang` still exists as a column (kept for historical rows and export), but new posts always take the site language.
 
 ## 6. Reading experience
 
@@ -101,13 +100,19 @@ Consequence: no hero image, small first-paint cost, and a technical blogger can 
   costs one TEXT column.
 - Author can hide / delete inline on the article page (no trip to the admin).
 
-## 9. Import / export
+## 9. Migration via agents
 
-- **Import**: minimal zip reader (stored + deflate via `DecompressionStream`), front-matter subset
-  (`title`, `date`, `tags`, `categories`, `slug`, `draft`, `excerpt`, `lang`).
-- **Export**: `GET /api/admin/export` → JSON; the importer accepts that JSON back. Exit is a product promise, not a
-  favour.
-- Images are **not** migrated automatically (no reliable cross-origin fetch of a stranger's assets); the docs say so.
+The file-import UI was removed on purpose. A zip importer is a one-shot, hard-to-debug path that also needs a zip
+parser and a front-matter subset maintained by hand. Instead `/admin/migrate` renders a prompt describing the site's
+own API, and the user hands that prompt to Codex / Claude / WorkBuddy:
+
+- the agent authenticates through `POST /api/admin/login` (same cookie as the admin UI),
+- reads `GET /api/admin/posts`, writes with `POST` / `PUT /api/admin/posts/:id`,
+- optionally renders with `POST /api/admin/preview`.
+
+No agent-only protocol, no extra token, no separate permission model — one less surface to keep in sync.
+
+**Export** (`GET /api/admin/export`) stays: a JSON file with site + posts. Moving in must not mean being locked in.
 
 ## 10. Known limitations (deliberate)
 
@@ -124,4 +129,4 @@ Consequence: no hero image, small first-paint cost, and a technical blogger can 
 `pnpm check` = `wrangler types` + `tsc --noEmit` + `vitest run`.
 
 Tests cover: i18n key parity, slug generation, word count, Markdown rendering (XSS, fences, TOC, excerpt), and the
-import parser (front matter, drafts, language detection).
+profile/tag/date formatting, and the agent prompt builder.

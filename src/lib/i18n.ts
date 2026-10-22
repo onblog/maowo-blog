@@ -108,7 +108,6 @@ export const messages = {
     "admin.editor.excerpt": "摘要（留空自动截取）",
     "admin.editor.cover": "封面图地址",
     "admin.editor.tags": "标签（用逗号分隔）",
-    "admin.editor.lang": "语言",
     "admin.editor.pin": "置顶",
     "admin.editor.save_draft": "存草稿",
     "admin.editor.publish": "发布",
@@ -126,15 +125,17 @@ export const messages = {
     "admin.comments.empty": "还没有评论",
     "admin.settings.title": "站点设置",
     "admin.settings.saved": "设置已保存",
-    "admin.import.title": "一键迁移",
-    "admin.import.hint": "上传 Hexo / Hugo / Jekyll 导出的 Markdown 目录 zip，或粘贴多个 .md 内容。",
-    "admin.import.choose": "选择 zip 文件",
-    "admin.import.upload": "开始导入",
-    "admin.import.result": "共 {total} 篇，导入 {imported} 篇，跳过 {skipped} 篇",
+    "admin.migrate.title": "迁移",
+    "admin.migrate.hint": "把下面这段提示词复制给你的 Agent（Codex / Claude / WorkBuddy 等），它就会用站点现有的 HTTP 接口登录、创建和发布文章。接口与后台完全同权，没有另一套协议。",
+    "admin.migrate.prompt_label": "Agent 提示词",
+    "admin.migrate.copy": "复制",
+    "admin.migrate.copied": "已复制",
+    "admin.migrate.footer": "粘贴前请把 <ADMIN_USER> 与 <ADMIN_PASS> 换成你的后台账号密码。已有博客要搬过来，也可以让 Agent 按同样方式批量创建。",
+    "admin.migrate.export": "导出全部文章（JSON）",
     "admin.tab.posts": "文章",
     "admin.tab.comments": "评论",
     "admin.tab.settings": "设置",
-    "admin.tab.import": "迁移",
+    "admin.tab.migrate": "迁移",
   },
 
   en: {
@@ -236,7 +237,6 @@ export const messages = {
     "admin.editor.excerpt": "Excerpt (auto if empty)",
     "admin.editor.cover": "Cover image URL",
     "admin.editor.tags": "Tags (comma separated)",
-    "admin.editor.lang": "Language",
     "admin.editor.pin": "Pin to top",
     "admin.editor.save_draft": "Save draft",
     "admin.editor.publish": "Publish",
@@ -254,19 +254,29 @@ export const messages = {
     "admin.comments.empty": "No comments yet",
     "admin.settings.title": "Site settings",
     "admin.settings.saved": "Settings saved",
-    "admin.import.title": "Import",
-    "admin.import.hint": "Upload a zip of Hexo / Hugo / Jekyll markdown, or paste .md contents.",
-    "admin.import.choose": "Choose zip file",
-    "admin.import.upload": "Start import",
-    "admin.import.result": "{total} posts total, imported {imported}, skipped {skipped}",
+    "admin.migrate.title": "Migrate",
+    "admin.migrate.hint": "Copy the prompt below into your agent (Codex / Claude / WorkBuddy, etc.). It will sign in through the site's existing HTTP API and create or publish posts — same endpoints as the admin UI, no separate protocol.",
+    "admin.migrate.prompt_label": "Agent prompt",
+    "admin.migrate.copy": "Copy",
+    "admin.migrate.copied": "Copied",
+    "admin.migrate.footer": "Replace <ADMIN_USER> and <ADMIN_PASS> with your admin credentials before sending. Moving an existing blog? Point the agent at the same endpoint to recreate posts in bulk.",
+    "admin.migrate.export": "Export all posts (JSON)",
     "admin.tab.posts": "Posts",
     "admin.tab.comments": "Comments",
     "admin.tab.settings": "Settings",
-    "admin.tab.import": "Import",
+    "admin.tab.migrate": "Migrate",
   },
 } as const;
 
 export type MessageKey = keyof typeof messages.zh;
+
+/**
+ * 站点语言：**部署期定死**（`SITE_LOCALE`），运行时没有切换入口。
+ * 所有需要语言的服务器代码都从这里取，不要在别处再判断一次。
+ */
+export function siteLocale(env: { SITE_LOCALE?: string }): Locale {
+  return String(env.SITE_LOCALE ?? "") === "en" ? "en" : "zh";
+}
 
 export function t(locale: Locale, key: MessageKey, params?: Record<string, string | number>): string {
   const dict = messages[locale] ?? messages.zh;

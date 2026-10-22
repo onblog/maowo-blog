@@ -9,7 +9,6 @@ import { COMMENT_COOLDOWN_SECONDS, createComment, lastCommentAt, remove, setStat
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
 import { renderMarkdown } from "../lib/markdown";
 import { getSite, updateSite } from "../services/site";
-import { parsePlain, parseZip } from "../services/importer";
 import type { AppEnv, Locale } from "../types";
 
 export const api = new Hono<AppEnv>();
@@ -166,6 +165,25 @@ api.put("/admin/posts/:id", requireAdminApi, async (c) => {
   }
 });
 
+/** 列出全部文章（Agent 拿 id 用；后台列表页走 SSR，不依赖这里） */
+api.get("/admin/posts", requireAdminApi, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    "SELECT id, slug, title, status, lang, pinned, views, reading_minutes, published_at, created_at, updated_at FROM posts ORDER BY updated_at DESC LIMIT 500",
+  ).all<Record<string, unknown>>();
+  return c.json({ ok: true, posts: results });
+});
+
+api.get("/admin/posts/:id", requireAdminApi, async (c) => {
+  const post = await getById(c.env, c.req.param("id"));
+  if (!post) return c.json({ error: "post_not_found" }, 404);
+  const { results } = await c.env.DB.prepare(
+    "SELECT t.name FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = ? ORDER BY t.name",
+  )
+    .bind(post.id)
+    .all<{ name: string }>();
+  return c.json({ ok: true, post, tags: results.map((row) => row.name) });
+});
+
 api.delete("/admin/posts/:id", requireAdminApi, async (c) => {
   await deletePost(c.env, c.req.param("id"));
   return c.json({ ok: true });
@@ -235,72 +253,3 @@ api.get("/admin/export", requireAdminApi, async (c) => {
   return c.json({ version: 1, exported_at: Date.now(), site, posts: results });
 });
 
-// ── 后台：一键迁移 ──────────────────────────────────────────────────────────
-
-api.post("/admin/import", requireAdminApi, async (c) => {
-  const contentType = c.req.header("content-type") ?? "";
-  let imported = 0;
-  let skipped = 0;
-  let total = 0;
-  const errors: string[] = [];
-
-  const posts = [] as Awaited<ReturnType<typeof parseZip>>;
-
-  if (contentType.includes("multipart/form-data")) {
-    const form = await c.req.formData();
-    const file = form.get("file");
-    if (file instanceof File) {
-      const buffer = await file.arrayBuffer();
-      try {
-        posts.push(...(await parseZip(buffer)));
-      } catch (err) {
-        return c.json({ error: "zip_parse_failed", message: err instanceof Error ? err.message : String(err) }, 400);
-      }
-    }
-    const text = form.get("text");
-    if (typeof text === "string" && text.trim()) posts.push(...parsePlain(text));
-  } else {
-    const body = await c.req.json<{ text?: string; posts?: Array<Record<string, unknown>> }>();
-    if (body.text) posts.push(...parsePlain(body.text));
-    // 本项目的导出 JSON 也能直接导回（换站/回滚都走这条路）
-    if (Array.isArray(body.posts)) {
-      for (const item of body.posts) {
-        const title = String(item.title ?? "").trim();
-        if (!title) continue;
-        posts.push({
-          title,
-          slug: String(item.slug ?? ""),
-          content: String(item.content_md ?? item.content ?? ""),
-          excerpt: String(item.excerpt ?? ""),
-          lang: item.lang === "en" ? "en" : "zh",
-          tags: "",
-          draft: item.status === "draft",
-          date: typeof item.published_at === "number" ? item.published_at : null,
-        });
-      }
-    }
-  }
-
-  const limited = posts.slice(0, 200);
-  total = limited.length;
-
-  for (const item of limited) {
-    try {
-      await createPost(c.env, {
-        title: item.title,
-        slug: item.slug,
-        content_md: item.content,
-        excerpt: item.excerpt,
-        lang: item.lang,
-        tags: item.tags,
-        status: item.draft ? "draft" : "published",
-      });
-      imported += 1;
-    } catch (err) {
-      skipped += 1;
-      if (errors.length < 5) errors.push(`${item.title}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  return c.json({ ok: true, total, imported, skipped, errors });
-});

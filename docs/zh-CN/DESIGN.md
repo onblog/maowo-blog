@@ -8,7 +8,7 @@
 迁移路径必须短到「十分钟能试一下」：
 
 1. 部署（四条命令）；
-2. 导入一个 Markdown 目录的 zip；
+2. 把 `/admin/migrate` 的提示词丢给 Agent；
 3. 地址形态不变（`/{slug}`）。
 
 不服务这条路径的东西全部砍掉：多用户、会员、配额、AI 策展、标签广场、趋势页、实时协作、版本历史。
@@ -42,7 +42,6 @@ flowchart LR
 | `tags` / `post_tags` | 受控标签集 | 按 slug upsert |
 | `comments` | 平铺行 + `root_id` / `parent_id` | 只有两层：顶层与回复 |
 | `sessions` | `sha256(token)` → 类型 + 身份 JSON | 类型：`reader`（GitHub）/ `admin` |
-| `import_runs` | 导入记录 | 可选，很小 |
 
 刻意不建：`users`（作者是环境变量）、评论的 `email` 列（隐私）、`post_revisions`（博客不是 wiki）、
 `ai_checks`（AI 是可选能力）。
@@ -96,12 +95,18 @@ LCP 只有文字，而且技术博主可以用一个 Cookie 关掉它。
 - 可选的 `website` 字段 —— 这是独立博客圈的互访规矩（评论 → 回访 → 反向链接），成本是一列 TEXT。
 - 作者可以在文章页直接隐藏/删除评论，不必进后台。
 
-## 9. 导入与导出
+## 9. 用 Agent 迁移
 
-- **导入**：最小 zip 解析器（stored + deflate，走 `DecompressionStream`）、front-matter 子集
-  （`title`、`date`、`tags`、`categories`、`slug`、`draft`、`excerpt`、`lang`）。
-- **导出**：`GET /api/admin/export` → JSON；导入器能把它吃回去。**出得去**是产品承诺，不是恩惠。
-- 图片**不会**自动迁移（没有一个可靠方式去抓别人域名的资源），文档里写明。
+文件导入 UI 是**故意删掉**的：zip 导入是一次性、难排查的路径，还要自己维护 zip 解析器和 front-matter 子集。
+改成 `/admin/migrate` 渲染一段描述本站 API 的提示词，用户把它丢给 Codex / Claude / WorkBuddy：
+
+- Agent 用 `POST /api/admin/login` 登录（和后台页面同一个 Cookie），
+- 用 `GET /api/admin/posts` 取 id，用 `POST` / `PUT /api/admin/posts/:id` 写文章，
+- 需要时用 `POST /api/admin/preview` 校验排版。
+
+没有「Agent 专用协议」、没有额外 Token、没有第二套权限模型——少一个要同步的面。
+
+**导出**（`GET /api/admin/export`）保留：一个包含站点与全部文章的 JSON 文件。**出得去**是产品承诺，不是恩惠。
 
 ## 10. 已知限制（有意为之）
 
@@ -117,5 +122,5 @@ LCP 只有文字，而且技术博主可以用一个 Cookie 关掉它。
 
 `pnpm check` = `wrangler types` + `tsc --noEmit` + `vitest run`。
 
-测试覆盖：i18n 键对齐、slug 生成、字数统计、Markdown 渲染（XSS、代码块、目录、摘要）、导入解析
+测试覆盖：i18n 键对齐、slug 生成、字数统计、Markdown 渲染（XSS、代码块、目录、摘要）
 （front-matter、草稿、语言检测）。

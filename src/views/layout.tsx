@@ -1,5 +1,6 @@
 import type { Child } from "hono/jsx";
 import { t } from "../lib/i18n";
+import { githubUrl } from "../lib/brand";
 import type { AdminUser, Locale, ReaderUser, SiteRow, ThemeName } from "../types";
 
 export function siteName(site: SiteRow, locale: Locale): string {
@@ -152,6 +153,18 @@ export function Layout(props: LayoutProps) {
                   <SunIcon />
                 </span>
               </button>
+              {site.owner_github ? (
+                <a
+                  class="icon-btn"
+                  href={githubUrl(site.owner_github) ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="GitHub"
+                  aria-label="GitHub"
+                >
+                  <GithubIcon />
+                </a>
+              ) : null}
               <a class="icon-btn" href="/feed.xml" title={t(locale, "nav.rss")} aria-label={t(locale, "nav.rss")}>
                 <RssIcon />
               </a>

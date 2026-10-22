@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { messages, t } from "../src/lib/i18n";
 import { slugify, uniqueSlug, wordCount, readingMinutes, formatDate } from "../src/lib/brand";
 import { excerpt, renderMarkdown, renderMarkdownWithToc } from "../src/lib/markdown";
-import { detectLang, parseFrontMatter, parseMarkdownFile, parsePlain } from "../src/services/importer";
 
 describe("i18n", () => {
   it("中英文键集合完全一致（新增文案必须两份都写）", () => {
@@ -85,41 +84,5 @@ describe("Markdown 渲染", () => {
     expect(text).toContain("开头");
     expect(text).not.toContain("const a");
     expect(text).not.toContain("|");
-  });
-});
-
-describe("导入解析", () => {
-  it("解析标准 front-matter", () => {
-    const { data, body } = parseFrontMatter("---\ntitle: 标题\ntags: [a, b]\ndate: 2024-01-02\n---\n正文");
-    expect(data.title).toBe("标题");
-    expect(data.tags).toBe("[a, b]");
-    expect(data.date).toBe("2024-01-02");
-    expect(body).toBe("正文");
-  });
-
-  it("解析多行数组标签", () => {
-    const { data } = parseFrontMatter("---\ntags:\n  - 随笔\n  - 技术\n---\n正文");
-    expect(data.tags).toBe("随笔, 技术");
-  });
-
-  it("标题回退到一级标题", () => {
-    const post = parseMarkdownFile("2024-01-01-hello.md", "# 你好世界\n\n正文内容");
-    expect(post?.title).toBe("你好世界");
-    expect(post?.content.trim()).toBe("正文内容");
-  });
-
-  it("draft: true 视为草稿", () => {
-    const post = parseMarkdownFile("a.md", "---\ntitle: A\ndraft: true\n---\n正文");
-    expect(post?.draft).toBe(true);
-  });
-
-  it("语言检测：中文正文判为 zh，英文判为 en", () => {
-    expect(detectLang("这是一段中文内容，用来判断语言归属")).toBe("zh");
-    expect(detectLang("This is an English paragraph about workers.")).toBe("en");
-  });
-
-  it("纯文本模式可以切出多篇", () => {
-    const posts = parsePlain("---\ntitle: 一\n---\n正文一\n---\ntitle: 二\n---\n正文二");
-    expect(posts.length).toBeGreaterThanOrEqual(2);
   });
 });

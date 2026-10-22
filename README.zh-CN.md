@@ -46,8 +46,9 @@ WordPress 太重：PHP + MySQL + 一堆插件。Hexo / Hugo 很快，但要本�
 - **可爱为壳，内容为核**。大圆角、手绘猫 mascot，两套形态（`cute` / `minimal`），技术博主不必改一行代码就能关掉可爱。
 - **亮 / 暗双色**，在首次绘制前决定（内联脚本），未手动选择时跟随系统。
 - **评论走 GitHub 登录**，只申请 `read:user`，**不存邮箱**；可选「你的博客地址」字段，保留独立博客圈「评论 → 回访 → 反向链接」的老规矩。
-- **一键迁移**：上传 Hexo / Hugo / Jekyll 的 Markdown 目录 zip，或直接粘贴 Markdown。
-- **一键导出**：整站导出 JSON，可再导回。进得来，也出得去。
+- **面向 Agent 的接口**：`/admin/migrate` 给一段可复制的提示词，Codex / Claude / WorkBuddy 复制后就能通过
+  `/api/admin/*` 写文章、发布、迁移——和后台页面用的是同一套接口，没有第二套协议。
+- **一键导出**：整站导出 JSON。进得来，也出得去。
 - **部署即配置**：语言（`zh` / `en`）与后台账号密码都是环境变量，不做运行时开关。
 - **只依赖 D1 + R2**。没有 KV、没有 Queues、没有定时任务，边缘缓存用 Cache API。
 - **自带 SEO**：全文 RSS、sitemap、robots、canonical、Open Graph。
@@ -110,13 +111,24 @@ npx wrangler deploy --env production
 
 站名、签名、头像、友情链接、形态（`cute | minimal`）、评论开关，都在 `/admin/settings` 里改。
 
-## 迁移与导出
+## 用 Agent 迁移
 
-- **导入**：`/admin/import` 上传 Markdown 目录的 `.zip`（Hexo `source/_posts`、Hugo `content/posts`、Jekyll
-  `_posts` 或任意 `.md` 目录）。识别 `title`、`date`、`tags`、`categories`、`slug`、`draft`、`excerpt`、`lang`。
-  图片不会自动下载，导入后可用外链或手动上传。
-- **导出**：`GET /api/admin/export` 返回 `{ site, posts: [...] }`。把这份 JSON 再 POST 回 `/admin/import`
-  即可完整恢复——没有锁定。
+打开 `/admin/migrate`，复制那段提示词，把 `<ADMIN_USER>` / `<ADMIN_PASS>` 换成你的账号密码，交给 Agent 即可。
+提示词描述的**只是本站已有的 HTTP 接口**——就是 `/admin` 自己调用的那一批：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/admin/login` | 登录，拿到 `miao_admin` Cookie |
+| `GET` | `/api/admin/posts` | 列出文章（id、slug、标题、状态） |
+| `GET` | `/api/admin/posts/:id` | 读单篇（含 `content_md`） |
+| `POST` / `PUT` | `/api/admin/posts` | 新建 / 覆盖文章 |
+| `DELETE` | `/api/admin/posts/:id` | 删除文章 |
+| `POST` | `/api/admin/preview` | Markdown 渲染成 HTML |
+| `GET` | `/api/admin/export` | 导出全部文章 JSON |
+
+没有「Agent 专用协议」，也没有额外的 Token：Agent 的登录方式和后台页面完全一样。
+
+**导出**：`GET /api/admin/export` 返回 `{ site, posts: [...] }`，整站一个 JSON 文件。
 
 ## 目录结构
 
@@ -127,7 +139,7 @@ src/
 ├── lib/                  Markdown、i18n、Cookie、会话、slug、格式化
 ├── middleware/           请求 id、守卫、请求上下文
 ├── routes/               页面、后台、API、OAuth、偏好、图片、feed/sitemap
-├── services/             文章、评论、站点、标签、GitHub、导入器
+├── services/             文章、评论、站点、标签、GitHub
 └── views/                SSR 组件（布局、首页、文章、后台）
 migrations/               D1 schema
 public/                   styles.css、app.js、admin.js、mascot 与 favicon
