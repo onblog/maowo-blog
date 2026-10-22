@@ -4,8 +4,8 @@
 
 # Miao Blog
 
-**A personal blog for Cloudflare Workers.**
-猫窝博客 —— 为读者而生的个人博客系统。
+**A personal, independent blog for Cloudflare Workers.**
+猫窝博客 —— 为读者而生的个人独立博客系统。
 
 <p>
   <a href="README.zh-CN.md">🇨🇳 中文</a> · 🇺🇸 English
