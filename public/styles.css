@@ -981,7 +981,8 @@ button {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--code-comment);
+  /* 代码块两种主题下都是深色底，配色固定，不跟主题变量走 */
+  color: #8b97a5;
 }
 .prose .code-block > .code-block__copy {
   display: grid;
@@ -993,16 +994,17 @@ button {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--code-comment);
+  /* 与语言标签同一套固定色：深色底上用亮灰，亮暗主题表现一致 */
+  color: #98a2ad;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
 }
 .code-block__copy:hover {
-  color: var(--code-ink);
+  color: #e6e8ea;
   background: rgb(255 255 255 / 10%);
 }
 .code-block__copy.is-copied {
-  color: var(--ok);
+  color: #7fbd9b;
 }
 
 .code-block__pre {
