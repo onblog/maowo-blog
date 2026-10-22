@@ -1,5 +1,6 @@
 import type { AdminUser, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
+import type { FriendLink } from "../services/site";
 import { Layout } from "./layout";
 import { formatDate } from "./format";
 
@@ -149,8 +150,7 @@ export function AboutPage({
   colorMode,
   reader,
   admin,
-  links,
-}: BaseProps & { links: Array<{ label_zh: string; label_en: string; url: string }> }) {
+}: BaseProps) {
   const bio = site.owner_bio;
   return (
     <Layout
@@ -174,20 +174,6 @@ export function AboutPage({
         <div class="about__bio prose">
           {bio ? <p>{bio}</p> : <p class="muted">{t(locale, "about.empty")}</p>}
         </div>
-        {links.length > 0 ? (
-          <div class="about__links">
-            <h3 class="about__links-title">{t(locale, "about.links")}</h3>
-            <ul class="link-list">
-              {links.map((link) => (
-                <li>
-                  <a class="link-list__item" href={link.url} target="_blank" rel="noopener noreferrer">
-                    {locale === "zh" ? link.label_zh : link.label_en}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
         {site.owner_email ? (
           <p class="about__contact">
             {t(locale, "about.contact")}: <a href={`mailto:${site.owner_email}`}>{site.owner_email}</a>
@@ -291,6 +277,53 @@ export function SeriesPage({
           </li>
         ))}
       </ol>
+    </Layout>
+  );
+}
+
+export function LinksPage({
+  site,
+  locale,
+  colorMode,
+  reader,
+  admin,
+  links,
+}: BaseProps & { links: FriendLink[] }) {
+  return (
+    <Layout
+      site={site}
+      locale={locale}
+      colorMode={colorMode}
+      reader={reader}
+      admin={admin}
+      title={t(locale, "links.title")}
+      canonicalPath="/links"
+      activeNav="links"
+    >
+      <header class="page-head">
+        <h1 class="page-head__title">{t(locale, "links.title")}</h1>
+        <p class="page-head__meta">{t(locale, "links.count", { n: links.length })}</p>
+      </header>
+
+      {links.length === 0 ? (
+        <p class="muted">{t(locale, "links.empty")}</p>
+      ) : (
+        <div class="links-grid">
+          {links.map((link) => (
+            <a class="link-card" href={link.url} target="_blank" rel="noopener noreferrer">
+              {link.avatar ? (
+                <img class="link-card__avatar" src={link.avatar} alt="" loading="lazy" />
+              ) : (
+                <span class="link-card__avatar link-card__avatar--fallback">{link.name.slice(0, 1)}</span>
+              )}
+              <span class="link-card__body">
+                <span class="link-card__name">{link.name}</span>
+                {link.desc ? <span class="link-card__desc">{link.desc}</span> : null}
+              </span>
+            </a>
+          ))}
+        </div>
+      )}
     </Layout>
   );
 }

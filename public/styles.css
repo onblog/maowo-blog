@@ -1482,6 +1482,68 @@ button {
   color: var(--danger);
 }
 
+/* ── 友链页 ────────────────────────────────────────────────────────────── */
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 2px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--hairline-strong);
+}
+.link-card__avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 2px solid var(--hairline);
+  background: var(--surface-soft);
+  object-fit: cover;
+}
+.link-card__avatar--fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.link-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.link-card__name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.link-card__desc {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ── 归档 / 标签 / 关于 ────────────────────────────────────────────────── */
 .page-head {
   display: flex;
@@ -2448,12 +2510,51 @@ button {
   border-radius: var(--radius-sm);
   background: var(--canvas);
 }
+.link-row__avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-soft);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-deep);
+}
+.link-row__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.link-row__avatar--fallback {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.link-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+.link-row__desc {
+  font-size: 12px;
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .link-row__name {
   font-weight: 700;
   font-size: 14px;
   color: var(--ink);
   text-decoration: none;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .link-row__name:hover {
   color: var(--accent-deep);

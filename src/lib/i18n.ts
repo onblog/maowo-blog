@@ -15,6 +15,7 @@ export const messages = {
     "nav.archive": "归档",
     "nav.tags": "标签",
     "nav.about": "关于",
+    "nav.links": "友链",
     "nav.admin": "后台",
     "nav.rss": "订阅",
 
@@ -84,8 +85,11 @@ export const messages = {
 
     "about.title": "关于",
     "about.empty": "博主还没有写自我介绍",
-    "about.links": "找到我",
     "about.contact": "联系我",
+
+    "links.title": "友情链接",
+    "links.count": "{n} 个站点",
+    "links.empty": "还没有友链。在后台「站点设置」里添加。",
 
     "notfound.title": "这里没有猫",
     "notfound.desc": "页面走丢了，回首页看看吧。",
@@ -171,10 +175,13 @@ export const messages = {
     "admin.settings.upload": "上传图片",
     "admin.settings.uploading": "上传中…",
     "admin.settings.links_title": "友情链接",
-    "admin.settings.links_hint": "显示在「关于」页，最多 8 条。",
+    "admin.settings.links_hint": "显示在独立的「友链」页，最多 24 条。每条含站点名、一句话简介与头像。",
     "admin.settings.add_link": "添加链接",
     "admin.settings.link_name": "名称",
     "admin.settings.link_url": "链接地址",
+    "admin.settings.link_desc": "一句话简介",
+    "admin.settings.link_desc_placeholder": "比如：写 Java 和后端的老朋友",
+    "admin.settings.link_avatar": "头像 / 图标",
     "admin.settings.cancel": "取消",
     "admin.settings.confirm": "添加",
     "admin.settings.save": "保存设置",
@@ -198,6 +205,7 @@ export const messages = {
     "nav.archive": "Archive",
     "nav.tags": "Tags",
     "nav.about": "About",
+    "nav.links": "Links",
     "nav.admin": "Admin",
     "nav.rss": "RSS",
 
@@ -267,8 +275,11 @@ export const messages = {
 
     "about.title": "About",
     "about.empty": "The author has not written a bio yet",
-    "about.links": "Find me",
     "about.contact": "Contact",
+
+    "links.title": "Friend links",
+    "links.count": "{n} sites",
+    "links.empty": "No friend links yet. Add them under Settings in the admin.",
 
     "notfound.title": "No cat here",
     "notfound.desc": "This page wandered off. Let's go home.",
@@ -354,10 +365,13 @@ export const messages = {
     "admin.settings.upload": "Upload image",
     "admin.settings.uploading": "Uploading…",
     "admin.settings.links_title": "Friend links",
-    "admin.settings.links_hint": "Shown on the About page, up to 8.",
+    "admin.settings.links_hint": "Shown on the standalone Links page, up to 24.",
     "admin.settings.add_link": "Add a link",
     "admin.settings.link_name": "Name",
     "admin.settings.link_url": "URL",
+    "admin.settings.link_desc": "One-line intro",
+    "admin.settings.link_desc_placeholder": "e.g. a friend writing about Java",
+    "admin.settings.link_avatar": "Avatar / icon",
     "admin.settings.cancel": "Cancel",
     "admin.settings.confirm": "Add",
     "admin.settings.save": "Save",

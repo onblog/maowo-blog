@@ -64,19 +64,30 @@ export async function updateSite(env: Env, patch: SitePatch): Promise<SiteRow> {
   return getSite(env);
 }
 
-/** owner_links 是 JSON 字符串，解析失败时当作空数组（不因脏数据把页面打挂） */
-export function parseLinks(raw: string): Array<{ label_zh: string; label_en: string; url: string }> {
+/**
+ * 友情链接：站点名 + 一句话简介 + 头像（都可空）+ 链接。
+ * 兼容旧数据（那时候只有 label_zh / label_en 两个字段）。
+ */
+export type FriendLink = {
+  name: string;
+  desc: string;
+  avatar: string;
+  url: string;
+};
+
+export function parseLinks(raw: string): FriendLink[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((item) => item && typeof item.url === "string")
       .map((item) => ({
-        label_zh: String(item.label_zh ?? item.label_en ?? "link"),
-        label_en: String(item.label_en ?? item.label_zh ?? "link"),
+        name: String(item.name ?? item.label_zh ?? item.label_en ?? "link").slice(0, 30),
+        desc: String(item.desc ?? "").slice(0, 80),
+        avatar: String(item.avatar ?? item.icon ?? ""),
         url: String(item.url),
       }))
-      .slice(0, 12);
+      .slice(0, 24);
   } catch {
     return [];
   }

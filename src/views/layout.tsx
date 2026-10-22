@@ -27,16 +27,17 @@ export type LayoutProps = {
   canonicalPath?: string;
   ogType?: "website" | "article";
   ogImage?: string | null;
-  activeNav?: "home" | "series" | "archive" | "tags" | "about" | "post";
+  activeNav?: "home" | "series" | "archive" | "tags" | "about" | "links" | "post";
   children: Child;
 };
 
-const NAV: Array<{ key: "home" | "series" | "archive" | "tags" | "about"; href: string; label: Parameters<typeof t>[1] }> = [
+const NAV: Array<{ key: "home" | "series" | "archive" | "tags" | "about" | "links"; href: string; label: Parameters<typeof t>[1] }> = [
   { key: "home", href: "/", label: "nav.home" },
   { key: "series", href: "/series", label: "nav.series" },
   { key: "archive", href: "/archive", label: "nav.archive" },
   { key: "tags", href: "/tags", label: "nav.tags" },
   { key: "about", href: "/about", label: "nav.about" },
+  { key: "links", href: "/links", label: "nav.links" },
 ];
 
 /** 猫 mascot（内联 SVG，零请求、可随主题变色） */

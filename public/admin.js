@@ -603,16 +603,38 @@
         handle.setAttribute("aria-hidden", "true");
         handle.textContent = "⠿";
 
+        // 头像（没有就用首字母占位）
+        var avatar = document.createElement("span");
+        avatar.className = "link-row__avatar";
+        if (link.avatar) {
+          var avatarImg = document.createElement("img");
+          avatarImg.src = link.avatar;
+          avatarImg.alt = "";
+          avatarImg.loading = "lazy";
+          avatar.appendChild(avatarImg);
+        } else {
+          avatar.classList.add("link-row__avatar--fallback");
+          avatar.textContent = (link.name || "?").slice(0, 1);
+        }
+
+        var body = document.createElement("span");
+        body.className = "link-row__body";
+
         var a = document.createElement("a");
         a.className = "link-row__name";
         a.href = link.url;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
+        a.title = link.url;
         a.textContent = linkLabel(link);
+        body.appendChild(a);
 
-        var url = document.createElement("span");
-        url.className = "link-row__url";
-        url.textContent = link.url;
+        if (link.desc) {
+          var descEl = document.createElement("span");
+          descEl.className = "link-row__desc";
+          descEl.textContent = link.desc;
+          body.appendChild(descEl);
+        }
 
         var del = document.createElement("button");
         del.type = "button";
@@ -624,8 +646,8 @@
         });
 
         li.appendChild(handle);
-        li.appendChild(a);
-        li.appendChild(url);
+        li.appendChild(avatar);
+        li.appendChild(body);
         li.appendChild(del);
         linksList.appendChild(li);
       });
@@ -651,16 +673,60 @@
       }
     }
 
+    // 弹窗里的头像上传（复用同一套压缩 + 上传通道）
+    if (linkDialog) {
+      var linkUploadBtn = linkDialog.querySelector("[data-link-upload]");
+      var linkFileInput = linkDialog.querySelector("[data-link-file]");
+      var linkAvatarInput = linkDialog.querySelector("[data-link-avatar]");
+      var linkAvatarPreview = linkDialog.querySelector("[data-link-avatar-preview]");
+
+      if (linkUploadBtn && linkFileInput) {
+        linkUploadBtn.addEventListener("click", function () {
+          linkFileInput.click();
+        });
+        linkFileInput.addEventListener("change", function () {
+          var file = linkFileInput.files && linkFileInput.files[0];
+          if (!file) return;
+          var original = linkUploadBtn.textContent;
+          linkUploadBtn.disabled = true;
+          linkUploadBtn.textContent = "…";
+          uploadMedia(file, null, function (res) {
+            linkUploadBtn.disabled = false;
+            linkUploadBtn.textContent = original;
+            if (res.ok && res.data && res.data.url) {
+              if (linkAvatarInput) linkAvatarInput.value = res.data.url;
+              if (linkAvatarPreview) {
+                linkAvatarPreview.innerHTML = "";
+                var img = document.createElement("img");
+                img.src = res.data.url;
+                img.alt = "";
+                linkAvatarPreview.appendChild(img);
+              }
+            } else {
+              window.alert("上传失败：" + ((res.data && res.data.error) || "未知错误"));
+            }
+            linkFileInput.value = "";
+          });
+        });
+      }
+    }
+
     if (linkForm && linkDialog) {
       linkForm.addEventListener("submit", function (event) {
         event.preventDefault();
-        var nameInput = linkForm.querySelector('input[name="link_name"]');
-        var urlInput = linkForm.querySelector('input[name="link_url"]');
-        var name = nameInput ? nameInput.value.trim() : "";
-        var url = urlInput ? urlInput.value.trim() : "";
+        var val = function (name) {
+          var el = linkForm.querySelector('input[name="' + name + '"]');
+          return el ? el.value.trim() : "";
+        };
+        var name = val("link_name");
+        var url = val("link_url");
         if (!name || !url) return;
-        // 单语言站点：名称只存一份（旧数据的 label_en 仍可读，保持兼容）
-        links.push({ label_zh: name, label_en: name, url: url });
+        links.push({
+          name: name,
+          url: url,
+          desc: val("link_desc"),
+          avatar: val("link_avatar")
+        });
         renderLinks();
         linkDialog.close();
       });

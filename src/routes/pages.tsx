@@ -15,7 +15,7 @@ import { listTags, getTagBySlug } from "../services/tags";
 import { getSeriesBySlug, listSeries, listSeriesPosts } from "../services/series";
 import { buildTree, countForPost, listVisible } from "../services/comments";
 import { HomePage } from "../views/home";
-import { AboutPage, ArchivePage, NotFoundPage, SeriesListPage, SeriesPage, TagPage, TagsPage } from "../views/pages";
+import { AboutPage, ArchivePage, LinksPage, NotFoundPage, SeriesListPage, SeriesPage, TagPage, TagsPage } from "../views/pages";
 import { PostPage } from "../views/post";
 
 /** 前台页面路由。`/:slug` 必须是最后一个注册的（兜底文章地址）。 */
@@ -72,8 +72,13 @@ pages.get("/tags/:slug", async (c) => {
 });
 
 pages.get("/about", async (c) => {
+  return c.html(<AboutPage {...baseProps(c)} />);
+});
+
+// 友情链接：独立页，每条 = 站点名 + 一句话简介 + 头像
+pages.get("/links", async (c) => {
   const site = await getSite(c.env);
-  return c.html(<AboutPage {...baseProps(c)} links={parseLinks(site.owner_links)} />);
+  return c.html(<LinksPage {...baseProps(c)} links={parseLinks(site.owner_links)} />);
 });
 
 // 文章详情：固定在 /p/{数字} 下 —— 与 /archive、/about、/series 这些静态页彻底分开
