@@ -91,7 +91,7 @@ npx wrangler secret put GITHUB_CLIENT_SECRET
 ### 4. 上线
 
 ```bash
-npx wrangler deploy
+npx wrangler deploy --env production
 ```
 
 打开 `/admin`，用第 3 步的账号登录，就可以写第一篇了。
@@ -102,7 +102,7 @@ npx wrangler deploy
 | --- | --- | --- | --- |
 | `SITE_URL` | 是 | — | 站点绝对地址，决定 OAuth 的 `redirect_uri` |
 | `SITE_LOCALE` | 否 | `zh` | **部署时定死**的界面语言：`zh` 或 `en` |
-| `ADMIN_USER` | 是 | — | `/admin` 账号（secret） |
+| `ADMIN_USER` | 是 | — | `/admin` 账号。**只能走 secret**——写进 `vars` 的空值会静默覆盖同名 secret |
 | `ADMIN_PASS` | 是 | — | `/admin` 密码（secret） |
 | `GITHUB_CLIENT_ID` | 评论需要 | — | 公开值，可放 `vars` |
 | `GITHUB_CLIENT_SECRET` | 评论需要 | — | **secret**，绝不进仓库 |

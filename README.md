@@ -94,7 +94,7 @@ development (`http://127.0.0.1:8789/api/auth/github/callback`).
 ### 4. Deploy
 
 ```bash
-npx wrangler deploy
+npx wrangler deploy --env production
 ```
 
 Then open `/admin`, sign in with the credentials from step 3, and write your first post.
@@ -105,7 +105,7 @@ Then open `/admin`, sign in with the credentials from step 3, and write your fir
 | --- | --- | --- | --- |
 | `SITE_URL` | yes | — | Absolute site URL. Derives the OAuth `redirect_uri`. |
 | `SITE_LOCALE` | no | `zh` | UI language, **fixed at deploy time**. `zh` or `en`. |
-| `ADMIN_USER` | yes | — | `/admin` username (secret). |
+| `ADMIN_USER` | yes | — | `/admin` username. **Secret only** — never put it in `vars` (an empty `vars` entry silently overrides the secret). |
 | `ADMIN_PASS` | yes | — | `/admin` password (secret). |
 | `GITHUB_CLIENT_ID` | for comments | — | Public value; safe in `vars`. |
 | `GITHUB_CLIENT_SECRET` | for comments | — | **Secret.** Never commit it. |

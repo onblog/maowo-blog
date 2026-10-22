@@ -53,9 +53,8 @@
     "SITE_URL": "http://127.0.0.1:8789",
     // Client ID 是公开值；Secret 走 .dev.vars / `wrangler secret put`。
     "GITHUB_CLIENT_ID": "",
-    // 后台账号密码：本地写 .dev.vars，生产用 `wrangler secret put ADMIN_USER` / `ADMIN_PASS`。
-    // 这里刻意留空——密码绝不进仓库。
-    "ADMIN_USER": ""
+    // 后台账号密码只走 secret（本地 .dev.vars / 生产 `wrangler secret put`）。
+    // ⚠️ 不要在这里写 ADMIN_USER —— vars 里的空字符串会覆盖同名 secret。
   },
 
   "routes": [
@@ -80,8 +79,7 @@
         "ENV": "production",
         "SITE_LOCALE": "zh",
         "SITE_URL": "https://blog.wordtk.com",
-        "GITHUB_CLIENT_ID": "",
-        "ADMIN_USER": ""
+        "GITHUB_CLIENT_ID": ""
       }
     }
   }
