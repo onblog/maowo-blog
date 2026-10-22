@@ -1920,9 +1920,12 @@ button {
 
 /* 编辑器：全宽大输入 + 工具栏 + 三态切换 */
 /* 编辑器页放宽：写作是核心动作，不该被 1180px 的阅读容器限制 */
-.admin-layout:has(.editor-page) {
-  max-width: 1560px;
-  grid-template-columns: 170px minmax(0, 1fr);
+@media (min-width: 821px) {
+  /* 只在桌面放宽：窄屏必须落回单列，否则导航会和编辑区并排挤在一起 */
+  .admin-layout:has(.editor-page) {
+    max-width: 1560px;
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
 }
 .editor-page {
   display: flex;
@@ -2360,11 +2363,23 @@ button {
   .toc {
     display: none;
   }
-  .editor__grid {
+  /* 编辑器：两栏改上下，靠页面滚动而不是固定视口高度 */
+  .editor-split {
     grid-template-columns: minmax(0, 1fr);
+    height: auto;
   }
-  .editor__side {
-    position: static;
+  .editor-input {
+    min-height: 48vh;
+  }
+  .editor-preview {
+    border-left: none;
+    border-top: 2px solid var(--hairline);
+    min-height: 36vh;
+  }
+  /* 只写 / 只预览时也不必撑满视口 */
+  .editor-split[data-mode="preview"] .editor-preview,
+  .editor-split[data-mode="write"] .editor-input {
+    min-height: 60vh;
   }
 }
 
@@ -2437,6 +2452,23 @@ button {
   .comment-children {
     margin-left: 8px;
     padding-left: 10px;
+  }
+  .editor-title {
+    font-size: 18px;
+  }
+  .editor-head {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .editor-toolbar {
+    padding: 4px 6px;
+  }
+  .admin-header {
+    padding: 0 14px;
+    gap: 8px;
+  }
+  .admin-header__user {
+    display: none;
   }
 }
 
