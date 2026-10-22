@@ -259,9 +259,36 @@ api.post("/admin/preview", requireAdminApi, async (c) => {
 api.get("/admin/export", requireAdminApi, async (c) => {
   const site = await getSite(c.env);
   const { results } = await c.env.DB.prepare(
-    "SELECT slug, title, content_md, excerpt, cover_image, lang, status, pinned, published_at, created_at FROM posts ORDER BY created_at",
-  ).all<Record<string, unknown>>();
-  c.header("content-disposition", 'attachment; filename="miao-blog-export.json"');
-  return c.json({ version: 1, exported_at: Date.now(), site, posts: results });
+    `SELECT p.id, p.slug, p.title, p.content_md, p.excerpt, p.cover_image, p.cover_alt, p.lang,
+            p.status, p.pinned, p.published_at, p.created_at, s.name AS series_name
+       FROM posts p
+       LEFT JOIN series s ON s.id = p.series_id
+      ORDER BY p.published_at ASC, p.created_at ASC`,
+  ).all<Record<string, unknown> & { id: string }>();
+
+  // 标签分批补齐（D1 单条查询的绑定参数有限）
+  const tagMap = new Map<string, string[]>();
+  const ids = results.map((row) => row.id);
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const { results: tagRows } = await c.env.DB.prepare(
+      `SELECT pt.post_id, t.name FROM post_tags pt JOIN tags t ON t.id = pt.tag_id
+        WHERE pt.post_id IN (${chunk.map(() => "?").join(",")}) ORDER BY t.name`,
+    )
+      .bind(...chunk)
+      .all<{ post_id: string; name: string }>();
+    for (const row of tagRows) {
+      const list = tagMap.get(row.post_id) ?? [];
+      list.push(row.name);
+      tagMap.set(row.post_id, list);
+    }
+  }
+
+  const posts = results.map((row) => ({
+    ...row,
+    tags: tagMap.get(row.id) ?? [],
+  }));
+
+  return c.json({ version: 2, exported_at: Date.now(), site, posts });
 });
 

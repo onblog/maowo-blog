@@ -86,6 +86,7 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
         ) : (
           <main class="admin-main">{children}</main>
         )}
+        <script src="/export-zip.js" defer />
         <script src="/admin.js" defer />
       </body>
     </html>
@@ -630,9 +631,9 @@ export function AdminMigratePage({
       </div>
 
       <p class="muted admin-migrate__foot">{t(locale, "admin.migrate.footer")}</p>
-      <a class="btn" href="/api/admin/export">
+      <button class="btn" type="button" data-export-zip>
         {t(locale, "admin.migrate.export")}
-      </a>
+      </button>
     </AdminShell>
   );
 }
