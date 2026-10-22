@@ -61,6 +61,145 @@
     }
   }
 
+  // ── Mermaid 图表：懒加载 + 源码/预览切换 ─────────────────────────────
+  var diagrams = document.querySelectorAll("[data-mermaid]");
+  if (diagrams.length) {
+    var mermaidPromise = null;
+    var lastTheme = document.documentElement.dataset.theme;
+
+    function loadMermaid() {
+      if (window.__mermaid) return Promise.resolve(window.__mermaid);
+      if (mermaidPromise) return mermaidPromise;
+      mermaidPromise = new Promise(function (resolve, reject) {
+        var script = document.createElement("script");
+        script.src = "/vendor/mermaid.min.js";
+        script.async = true;
+        script.onload = function () {
+          if (window.__mermaid) resolve(window.__mermaid);
+          else reject(new Error("mermaid 未挂载"));
+        };
+        script.onerror = function () {
+          reject(new Error("mermaid 加载失败"));
+        };
+        document.head.appendChild(script);
+      });
+      return mermaidPromise;
+    }
+
+    // 配色全部取自站点 CSS 变量，亮暗主题各有一套
+    function themeVariables() {
+      var cs = getComputedStyle(document.documentElement);
+      var dark = document.documentElement.dataset.theme === "dark";
+      var v = function (name) {
+        return cs.getPropertyValue(name).trim();
+      };
+      return {
+        darkMode: dark,
+        background: v("--surface") || (dark ? "#1e1d22" : "#ffffff"),
+        primaryColor: v("--accent-soft"),
+        mainBkg: v("--accent-soft"),
+        primaryTextColor: v("--ink"),
+        primaryBorderColor: v("--accent"),
+        nodeBorder: v("--accent"),
+        lineColor: v("--ink-soft"),
+        secondaryColor: v("--surface-soft"),
+        tertiaryColor: v("--canvas"),
+        clusterBkg: v("--surface-soft"),
+        clusterBorder: v("--hairline-strong"),
+        titleColor: v("--ink"),
+        edgeLabelBackground: v("--surface"),
+        fontFamily: v("--font-sans")
+      };
+    }
+
+    function iconSvg(kind) {
+      if (kind === "code") {
+        return '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3 2 8l4 5M10 3l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      }
+      return '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.6 8S3.9 3.8 8 3.8 14.4 8 14.4 8 12.1 12.2 8 12.2 1.6 8 1.6 8Z" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.7" stroke="currentColor" stroke-width="1.6"/></svg>';
+    }
+
+    function renderAll() {
+      loadMermaid()
+        .then(function (mermaid) {
+          mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: "strict",
+            theme: "base",
+            themeVariables: themeVariables(),
+            flowchart: { curve: "basis", useMaxWidth: true },
+            sequence: { useMaxWidth: true },
+            gantt: { useMaxWidth: true }
+          });
+
+          diagrams.forEach(function (fig, index) {
+            var pre = fig.querySelector("pre.mermaid");
+            if (!pre) return;
+            var source = fig.getAttribute("data-source");
+            if (!source) {
+              source = pre.textContent || "";
+              fig.setAttribute("data-source", source);
+            }
+            var id = "miao-mermaid-" + index + "-" + Date.now().toString(36);
+            mermaid
+              .render(id, source)
+              .then(function (result) {
+                fig.setAttribute("data-svg", result.svg);
+                if (!fig.classList.contains("diagram--source")) pre.innerHTML = result.svg;
+                fig.classList.add("diagram--ready");
+                fig.classList.remove("diagram--error");
+              })
+              .catch(function (err) {
+                fig.classList.add("diagram--error");
+                fig.classList.remove("diagram--ready");
+                fig.setAttribute("data-error", String((err && err.message) || err).slice(0, 160));
+              });
+          });
+        })
+        .catch(function () {
+          // 库加载失败：保留源码，至少不白屏
+          diagrams.forEach(function (fig) {
+            fig.classList.add("diagram--static");
+          });
+        });
+    }
+
+    diagrams.forEach(function (fig) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "diagram__toggle";
+      button.title = "查看源码";
+      button.setAttribute("aria-label", "切换源码与预览");
+      button.setAttribute("aria-pressed", "false");
+      button.innerHTML = iconSvg("code");
+      fig.appendChild(button);
+
+      button.addEventListener("click", function () {
+        var pre = fig.querySelector("pre.mermaid");
+        var source = fig.getAttribute("data-source") || "";
+        var svg = fig.getAttribute("data-svg") || "";
+        var showSource = fig.classList.toggle("diagram--source");
+        if (pre) {
+          if (showSource) pre.textContent = source;
+          else if (svg) pre.innerHTML = svg;
+        }
+        button.innerHTML = iconSvg(showSource ? "preview" : "code");
+        button.title = showSource ? "查看预览" : "查看源码";
+        button.setAttribute("aria-pressed", showSource ? "true" : "false");
+      });
+    });
+
+    renderAll();
+
+    // 读者切换亮暗后重渲染，图表配色跟着走
+    new MutationObserver(function () {
+      var theme = document.documentElement.dataset.theme;
+      if (theme === lastTheme) return;
+      lastTheme = theme;
+      renderAll();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
   // ── 评论 ─────────────────────────────────────────────────────────────
   var form = document.querySelector("[data-comment-form]");
   var section = document.querySelector("[data-post-slug]");

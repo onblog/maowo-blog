@@ -4,3 +4,5 @@ node_modules/
 *.log
 .DS_Store
 coverage/
+# mermaid 打包产物：由 pnpm build:mermaid 生成，不进仓库
+public/vendor/

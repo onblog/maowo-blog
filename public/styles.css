@@ -1049,17 +1049,91 @@ button {
   display: block;
 }
 
-/* mermaid 占位：未渲染时显示源码，不套代码块外壳 */
+/* Mermaid 图表卡：渲染后是一张带描边的图卡，右上角可切源码 */
 .diagram {
+  position: relative;
   margin: 1.6em 0;
-}
-.diagram--ready pre {
-  background: var(--surface-soft);
-  color: var(--ink);
-  border-color: var(--hairline);
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 2px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
 }
 .diagram pre {
   margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--ink);
+  overflow: visible;
+}
+.diagram--ready pre svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 切换按钮：默认隐身，悬停/聚焦/源码模式下出现 */
+.diagram__toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--ink-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+.diagram:hover .diagram__toggle,
+.diagram__toggle:focus-visible,
+.diagram--source .diagram__toggle {
+  opacity: 1;
+}
+.diagram__toggle:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+/* 源码模式 */
+.diagram--source pre {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* 渲染失败：把原因写在图卡里，而不是静默留一块空白 */
+.diagram--error {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--hairline));
+}
+.diagram--error::after {
+  content: "图表渲染失败：" attr(data-error);
+  display: block;
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--danger);
+}
+
+/* 窄屏：图卡内边距收紧，按钮常驻（触屏没有 hover） */
+@media (max-width: 560px) {
+  .diagram {
+    padding: 16px 12px;
+  }
+  .diagram__toggle {
+    opacity: 1;
+  }
 }
 
 /* ── 文章尾部：作者卡 / 上下篇 / 评论 ─────────────────────────────────── */
