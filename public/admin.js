@@ -554,8 +554,9 @@
       links = [];
     }
 
+    // 新结构是 name；label_zh/label_en 只用于兼容更早的数据
     function linkLabel(link) {
-      return link.label_zh || link.label_en || "link";
+      return link.name || link.label_zh || link.label_en || "link";
     }
 
     var dragIndex = -1;
