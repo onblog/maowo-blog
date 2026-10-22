@@ -997,11 +997,11 @@ button {
   /* 与语言标签同一套固定色：深色底上用亮灰，亮暗主题表现一致 */
   color: #98a2ad;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  /* 只有颜色变化，不出现背景块——按钮就是一个纯图标 */
+  transition: color 0.15s ease;
 }
 .code-block__copy:hover {
   color: #e6e8ea;
-  background: rgb(255 255 255 / 10%);
 }
 .code-block__copy.is-copied {
   color: #7fbd9b;

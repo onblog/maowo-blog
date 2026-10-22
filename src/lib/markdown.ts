@@ -218,10 +218,10 @@ md.renderer.rules.fence = (tokens, idx) => {
    */
   const copyButton =
     `<button class="code-block__copy" type="button" data-copy-code aria-label="复制代码" title="复制代码">` +
-    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ` +
+    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ` +
     `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-    `<rect width="13" height="13" x="8" y="8" rx="2.4" ry="2.4"/>` +
-    `<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>` +
+    `<rect x="9" y="9" width="12" height="12" rx="2.6"/>` +
+    `<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>` +
     `</svg></button>`;
   return (
     `<div class="code-block">` +
