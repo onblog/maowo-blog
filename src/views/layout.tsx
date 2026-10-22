@@ -106,6 +106,73 @@ function GithubIcon() {
   );
 }
 
+
+/**
+ * 拉绳小猫：滚动到一屏之后从顶部垂下来，点击平滑回到顶部。
+ * 只在首页与文章页渲染（两个阅读场景），窄屏由 CSS 隐藏。
+ */
+function CatRope({ locale }: { locale: Locale }) {
+  return (
+    <div class="cat-rope" data-cat-rope aria-hidden="false">
+      <span class="cat-rope__line" aria-hidden="true" />
+      <button
+        class="cat-rope__cat"
+        type="button"
+        data-cat-rope-btn
+        aria-label={locale === "zh" ? "回到顶部" : "Back to top"}
+        title={locale === "zh" ? "拉我上去" : "Pull me up"}
+      >
+        <svg class="cat-rope__svg" viewBox="0 0 56 64" aria-hidden="true">
+          <path
+            d="M14 17 10 3l13 8"
+            fill="var(--mascot-fill)"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2.4"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M42 17 46 3l-13 8"
+            fill="var(--mascot-fill)"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2.4"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M9 27c0-8.4 8.5-14.5 19-14.5S47 18.6 47 27s-8.5 14-19 14S9 35.4 9 27Z"
+            fill="var(--mascot-fill)"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2.4"
+          />
+          <path
+            d="M19 27c1.8-2.2 4-2.2 5.8 0M31.2 27c1.8-2.2 4-2.2 5.8 0"
+            fill="none"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <rect
+            x="16.5"
+            y="39"
+            width="23"
+            height="8"
+            rx="4"
+            fill="var(--accent)"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2"
+          />
+          <path
+            d="M28 47c0 6.5 4.5 8.5 8 6.5"
+            fill="none"
+            stroke="var(--mascot-stroke)"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export function Layout(props: LayoutProps) {
   const { site, locale, colorMode, reader, admin, title, description, canonicalPath, ogType, ogImage } = props;
   const name = siteName(site);
@@ -197,6 +264,8 @@ export function Layout(props: LayoutProps) {
         <main id="main" class="shell main">
           {props.children}
         </main>
+
+        {(props.activeNav === "home" || props.activeNav === "post") && <CatRope locale={locale} />}
 
         <footer class="site-footer">
           <div class="shell site-footer__inner">

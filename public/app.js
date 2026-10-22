@@ -26,6 +26,41 @@
     });
   });
 
+  // ── 拉绳小猫：滚过一屏才出现，点击回到顶部 ───────────────────────────
+  var catRope = document.querySelector("[data-cat-rope]");
+  if (catRope) {
+    var catBtn = catRope.querySelector("[data-cat-rope-btn]");
+    var SHOW_AT = 400; // 约一屏的四分之一，太早出现会挡视线
+    var ticking = false;
+
+    function syncCat() {
+      var doc = document.documentElement;
+      // 内容不足一屏时没有"回到顶部"的意义，直接不出现
+      var scrollable = doc.scrollHeight > window.innerHeight + 200;
+      var show = scrollable && window.scrollY > SHOW_AT;
+      catRope.classList.toggle("cat-rope--visible", show);
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(syncCat);
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", syncCat);
+    syncCat();
+
+    if (catBtn) {
+      catBtn.addEventListener("click", function () {
+        // 先收起来再滚：视觉上是"猫被拉上去"，滚到底后 syncCat 也不会再显示它
+        catRope.classList.remove("cat-rope--visible");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+  }
+
   // ── 评论 ─────────────────────────────────────────────────────────────
   var form = document.querySelector("[data-comment-form]");
   var section = document.querySelector("[data-post-slug]");
