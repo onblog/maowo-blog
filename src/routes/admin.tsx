@@ -27,7 +27,7 @@ function base(c: Context<AppEnv>) {
   return {
     site: c.get("site"),
     locale: c.get("locale"),
-    theme: c.get("theme"),
+    colorMode: c.get("colorMode"),
   };
 }
 

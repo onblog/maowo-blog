@@ -88,8 +88,9 @@ Numbers are chosen, not inherited:
 Two axes, independent:
 
 - `data-theme="light|dark"` — colour. Decided by an inline script before the stylesheet, so no flash.
-- `data-style="cute|minimal"` — shape. `cute` uses 16–22px radii, 2px borders, solid offset shadows and a mascot;
-  `minimal` collapses radii, removes shadows and hides the mascot.
+- `data-color-mode="light|dark|auto"` — chosen by the author in `/admin/settings`. `auto` lets the reader's system
+  decide; when it is `auto` the server omits `data-theme` so the `prefers-color-scheme` block applies even without JS.
+  There is no reader-facing toggle and no second "shape": one look, tuned once.
 
 Cuteness is expressed through **geometry and motion** (rounded cards, mascot bobbing, hover lift), not illustration.
 Consequence: no hero image, small first-paint cost, and a technical blogger can turn it off with one cookie.

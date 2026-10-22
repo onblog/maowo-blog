@@ -1,4 +1,4 @@
-import type { AdminUser, Locale, PostSummary, ReaderUser, SiteRow, ThemeName } from "../types";
+import type { AdminUser, Locale, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import type { ListResult } from "../services/posts";
 import { t } from "../lib/i18n";
 import { Layout, Mascot, siteName, siteTagline } from "./layout";
@@ -7,14 +7,14 @@ import { PostCard, Pagination } from "./post-card";
 export type HomeProps = {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   reader: ReaderUser | null;
   admin: AdminUser | null;
   list: ListResult;
   stats: { posts: number; words: number; tags: number };
 };
 
-export function HomePage({ site, locale, theme, reader, admin, list, stats }: HomeProps) {
+export function HomePage({ site, locale, colorMode, reader, admin, list, stats }: HomeProps) {
   const name = siteName(site);
   const tagline = siteTagline(site);
   const description = tagline || (site.seo_description);
@@ -23,7 +23,7 @@ export function HomePage({ site, locale, theme, reader, admin, list, stats }: Ho
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={undefined}

@@ -25,7 +25,7 @@ function baseProps(c: Context<AppEnv>) {
   return {
     site: c.get("site"),
     locale: c.get("locale"),
-    theme: c.get("theme"),
+    colorMode: c.get("colorMode"),
     reader: c.get("reader"),
     admin: c.get("admin"),
   };

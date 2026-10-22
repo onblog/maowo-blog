@@ -47,8 +47,8 @@ That is the feature.
 - **Stable numeric URLs.** A post lives at `/{13-digit-timestamp}` and never changes when the title changes.
 - **Series (合集).** Group posts into a reading order that is simply publication time — no manual ordering to maintain.
 - **Custom publish dates.** Backfill old posts or schedule the date you want; created/updated timestamps stay in the database.
-- **Cute by shell, serious by content.** Rounded cards, a hand-drawn cat mascot, and two looks (`cute` / `minimal`) so a
-  technical blogger can turn the cuteness off without changing a line of code.
+- **Cute by shell, serious by content.** Rounded cards, a hand-drawn cat mascot, and a reading layout tuned for Chinese
+  and Latin text alike. One look, done properly — no theme marketplace to configure.
 - **Light and dark**, decided before first paint (inline script), following the system until the reader chooses.
 - **Comments with GitHub login.** Only `read:user` is requested. **No email is stored.** Optional "your blog URL" field
   keeps the independent-blog web-ring culture (comment → return visit → backlink).
@@ -115,7 +115,7 @@ Then open `/admin`, sign in with the credentials from step 3, and write your fir
 | `GITHUB_CLIENT_SECRET` | for comments | — | **Secret.** Never commit it. |
 | `ENV` | no | `development` | Set to `production` when deployed. |
 
-Tune the design in `/admin/settings`: site name (zh/en), tagline, author bio, avatar, links, `cute | minimal`, comments on/off.
+Tune the site in `/admin/settings`: name, tagline, author bio, avatar, links, **colour mode (`auto` / `light` / `dark`)**, comments on/off.
 
 ## Migrate with an agent
 

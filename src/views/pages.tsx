@@ -1,4 +1,4 @@
-import type { AdminUser, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ThemeName } from "../types";
+import type { AdminUser, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
 import { Layout } from "./layout";
 import { formatDate } from "./format";
@@ -6,7 +6,7 @@ import { formatDate } from "./format";
 type BaseProps = {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   reader: ReaderUser | null;
   admin: AdminUser | null;
 };
@@ -14,7 +14,7 @@ type BaseProps = {
 export function ArchivePage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   groups,
@@ -24,7 +24,7 @@ export function ArchivePage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={t(locale, "archive.title")}
@@ -66,7 +66,7 @@ export function ArchivePage({
 export function TagsPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   tags,
@@ -75,7 +75,7 @@ export function TagsPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={t(locale, "tags.title")}
@@ -106,7 +106,7 @@ export function TagsPage({
 export function TagPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   tagName,
@@ -116,7 +116,7 @@ export function TagPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={`#${tagName}`}
@@ -146,7 +146,7 @@ export function TagPage({
 export function AboutPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   links,
@@ -156,7 +156,7 @@ export function AboutPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={t(locale, "about.title")}
@@ -201,7 +201,7 @@ export function AboutPage({
 export function SeriesListPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   series,
@@ -212,7 +212,7 @@ export function SeriesListPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={t(locale, "series.title")}
@@ -246,7 +246,7 @@ export function SeriesListPage({
 export function SeriesPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   series,
@@ -259,7 +259,7 @@ export function SeriesPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={series.name}
@@ -295,12 +295,12 @@ export function SeriesPage({
   );
 }
 
-export function NotFoundPage({ site, locale, theme, reader, admin }: BaseProps) {
+export function NotFoundPage({ site, locale, colorMode, reader, admin }: BaseProps) {
   return (
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={t(locale, "notfound.title")}

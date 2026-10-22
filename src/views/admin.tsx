@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ThemeName } from "../types";
+import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
 import { Mascot, siteName } from "./layout";
 import { formatDate } from "./format";
@@ -7,14 +7,14 @@ import { formatDate } from "./format";
 type Shell = {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser | null;
   active: "posts" | "comments" | "settings" | "migrate" | "login";
   children: Child;
 };
 
 /** 后台外壳：与前台共用 token 与字体，但换成「侧栏 + 工作区」布局 */
-export function AdminShell({ site, locale, theme, admin, active, children }: Shell) {
+export function AdminShell({ site, locale, colorMode, admin, active, children }: Shell) {
   const name = siteName(site);
   const tabs: Array<{ key: Shell["active"]; href: string; label: Parameters<typeof t>[1] }> = [
     { key: "posts", href: "/admin", label: "admin.tab.posts" },
@@ -24,7 +24,11 @@ export function AdminShell({ site, locale, theme, admin, active, children }: She
   ];
 
   return (
-    <html lang={locale === "zh" ? "zh-CN" : "en"} data-theme="light" data-style={theme}>
+    <html
+      lang={locale === "zh" ? "zh-CN" : "en"}
+      data-theme={colorMode === "auto" ? undefined : colorMode}
+      data-color-mode={colorMode}
+    >
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -34,7 +38,7 @@ export function AdminShell({ site, locale, theme, admin, active, children }: She
         <link rel="stylesheet" href="/styles.css" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('miao:color');if(s!=='light'&&s!=='dark'){s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=s;}catch(e){}})();`,
+            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var t=m==='dark'?'dark':m==='light'?'light':(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){}})();`,
           }}
         />
       </head>
@@ -77,9 +81,9 @@ export function AdminShell({ site, locale, theme, admin, active, children }: She
   );
 }
 
-export function AdminLoginPage({ site, locale, theme }: Omit<Shell, "children" | "admin" | "active">) {
+export function AdminLoginPage({ site, locale, colorMode }: Omit<Shell, "children" | "admin" | "active">) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={null} active="login">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={null} active="login">
       <div class="admin-login">
         <h1 class="admin-login__title">{t(locale, "admin.login.title")}</h1>
         <p class="admin-login__hint">{t(locale, "admin.login.hint")}</p>
@@ -105,18 +109,18 @@ export function AdminLoginPage({ site, locale, theme }: Omit<Shell, "children" |
 export function AdminPostsPage({
   site,
   locale,
-  theme,
+  colorMode,
   admin,
   posts,
 }: {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser;
   posts: PostRow[];
 }) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="posts">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="posts">
       <div class="admin-section-head">
         <h1 class="admin-title">{t(locale, "admin.dashboard.title")}</h1>
         <a class="btn btn--primary" href="/admin/new">
@@ -177,7 +181,7 @@ export function AdminPostsPage({
 export function AdminEditorPage({
   site,
   locale,
-  theme,
+  colorMode,
   admin,
   post,
   tags,
@@ -186,7 +190,7 @@ export function AdminEditorPage({
 }: {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser;
   post: PostRow | null;
   tags: string;
@@ -195,7 +199,7 @@ export function AdminEditorPage({
 }) {
   const isNew = post === null;
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="posts">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="posts">
       <div class="editor-page" data-editor-page data-post-id={post?.id ?? ""}>
         <div class="editor-head">
           <input
@@ -372,18 +376,18 @@ export function AdminEditorPage({
 export function AdminCommentsPage({
   site,
   locale,
-  theme,
+  colorMode,
   admin,
   comments,
 }: {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser;
   comments: Array<CommentRow & { post_title: string | null; post_slug: string | null }>;
 }) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="comments">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="comments">
       <h1 class="admin-title">{t(locale, "admin.comments.title")}</h1>
       {comments.length === 0 ? (
         <p class="muted">{t(locale, "admin.comments.empty")}</p>
@@ -461,16 +465,16 @@ function ImageField({
 export function AdminSettingsPage({
   site,
   locale,
-  theme,
+  colorMode,
   admin,
 }: {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser;
 }) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="settings">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="settings">
       <h1 class="admin-title">{t(locale, "admin.settings.title")}</h1>
       <form class="admin-form" data-settings-form>
         <div class="admin-form__grid">
@@ -487,13 +491,16 @@ export function AdminSettingsPage({
             <input class="field__input" name="owner_name" value={site.owner_name} />
           </label>
           <label class="field">
-            <span class="field__label">{t(locale, "admin.settings.theme")}</span>
-            <select class="field__input" name="theme">
-              <option value="cute" selected={site.theme === "cute"}>
-                {t(locale, "admin.settings.theme_cute")}
+            <span class="field__label">{t(locale, "admin.settings.color_mode")}</span>
+            <select class="field__input" name="color_mode">
+              <option value="auto" selected={site.color_mode === "auto"}>
+                {t(locale, "admin.settings.color_auto")}
               </option>
-              <option value="minimal" selected={site.theme === "minimal"}>
-                {t(locale, "admin.settings.theme_minimal")}
+              <option value="light" selected={site.color_mode === "light"}>
+                {t(locale, "admin.settings.color_light")}
+              </option>
+              <option value="dark" selected={site.color_mode === "dark"}>
+                {t(locale, "admin.settings.color_dark")}
               </option>
             </select>
           </label>
@@ -586,18 +593,18 @@ export function AdminSettingsPage({
 export function AdminMigratePage({
   site,
   locale,
-  theme,
+  colorMode,
   admin,
   prompt,
 }: {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   admin: AdminUser;
   prompt: string;
 }) {
   return (
-    <AdminShell site={site} locale={locale} theme={theme} admin={admin} active="migrate">
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="migrate">
       <h1 class="admin-title">{t(locale, "admin.migrate.title")}</h1>
       <p class="muted admin-migrate__hint">{t(locale, "admin.migrate.hint")}</p>
 

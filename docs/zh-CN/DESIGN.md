@@ -84,8 +84,9 @@ SEO 去消歧 —— 换来一个几乎没人用的功能。字典仍保留两�
 两个互相独立的轴：
 
 - `data-theme="light|dark"` —— 颜色。由样式表之前的**内联脚本**决定，所以没有闪白。
-- `data-style="cute|minimal"` —— 形态。`cute` 用 16–22px 圆角、2px 描边、实色偏移阴影和 mascot；
-  `minimal` 收掉圆角、去掉阴影、隐藏 mascot。
+- `data-color-mode="light|dark|auto"` —— 作者在 `/admin/settings` 里定。`auto` 交给读者系统决定；当值是 `auto` 时
+  服务端**不输出** `data-theme`，这样即使 JS 没执行，`prefers-color-scheme` 兜底也能生效。
+  没有读者端切换入口，也没有第二套「形态」：一套视觉，一次调好。
 
 「可爱」靠**几何与时序**表达（圆角卡片、mascot 呼吸、hover 上浮），不靠插画。代价与收益：首屏没有大图、
 LCP 只有文字，而且技术博主可以用一个 Cookie 关掉它。

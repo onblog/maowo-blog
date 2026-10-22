@@ -2,28 +2,6 @@
 (function () {
   "use strict";
 
-  // ── 主题（亮/暗）──────────────────────────────────────────────────────
-  var STORAGE_KEY = "miao:color";
-
-  function applyTheme(value) {
-    document.documentElement.dataset.theme = value;
-    try {
-      localStorage.setItem(STORAGE_KEY, value);
-    } catch (e) {
-      /* 隐私模式下写不进去，不影响本次会话 */
-    }
-  }
-
-  function currentTheme() {
-    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-  }
-
-  document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      applyTheme(currentTheme() === "dark" ? "light" : "dark");
-    });
-  });
-
   // ── 评论 ─────────────────────────────────────────────────────────────
   var form = document.querySelector("[data-comment-form]");
   var section = document.querySelector("[data-post-slug]");

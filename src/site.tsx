@@ -8,7 +8,6 @@ import { api } from "./routes/api";
 import { authRoutes } from "./routes/auth";
 import { mediaApi, mediaFiles } from "./routes/media";
 import { pages } from "./routes/pages";
-import { prefRoutes } from "./routes/prefs";
 import { wellKnown } from "./routes/wellknown";
 import type { AppEnv } from "./types";
 import { NotFoundPage } from "./views/pages";
@@ -36,7 +35,6 @@ export function createSiteApp() {
   app.use("*", loadContext);
 
   app.route("/api/auth", authRoutes);
-  app.route("/api/prefs", prefRoutes);
   app.route("/api", mediaApi);
   app.route("/api", api);
   app.route("/", mediaFiles);
@@ -50,7 +48,7 @@ export function createSiteApp() {
       <NotFoundPage
         site={ctx.get("site")}
         locale={ctx.get("locale")}
-        theme={ctx.get("theme")}
+        colorMode={ctx.get("colorMode")}
         reader={ctx.get("reader")}
         admin={ctx.get("admin")}
       />,

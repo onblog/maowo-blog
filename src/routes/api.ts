@@ -236,7 +236,7 @@ api.put("/admin/site", requireAdminApi, async (c) => {
     "owner_email",
     "owner_location",
     "owner_links",
-    "theme",
+    "color_mode",
     "accent",
     "seo_description",
   ];

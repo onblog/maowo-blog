@@ -1,7 +1,7 @@
 import type { Child } from "hono/jsx";
 import { t } from "../lib/i18n";
 import { githubUrl } from "../lib/brand";
-import type { AdminUser, Locale, ReaderUser, SiteRow, ThemeName } from "../types";
+import type { AdminUser, Locale, ReaderUser, SiteRow, ColorMode } from "../types";
 
 export function siteName(site: SiteRow): string {
   return site.name;
@@ -18,7 +18,7 @@ export function ownerBio(site: SiteRow): string {
 export type LayoutProps = {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   reader: ReaderUser | null;
   admin: AdminUser | null;
   title?: string;
@@ -57,22 +57,7 @@ function Mascot({ size = 30 }: { size?: number }) {
   );
 }
 
-function SunIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2" />
-      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-    </svg>
-  );
-}
 
-function MoonIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-    </svg>
-  );
-}
 
 
 function RssIcon() {
@@ -93,13 +78,17 @@ function GithubIcon() {
 }
 
 export function Layout(props: LayoutProps) {
-  const { site, locale, theme, reader, admin, title, description, canonicalPath, ogType, ogImage } = props;
+  const { site, locale, colorMode, reader, admin, title, description, canonicalPath, ogType, ogImage } = props;
   const name = siteName(site);
   const fullTitle = title ? `${title} · ${name}` : name;
   const desc = description || siteTagline(site) || site.seo_description;
 
   return (
-    <html lang={locale === "zh" ? "zh-CN" : "en"} data-theme="light" data-style={theme}>
+    <html
+      lang={locale === "zh" ? "zh-CN" : "en"}
+      data-theme={colorMode === "auto" ? undefined : colorMode}
+      data-color-mode={colorMode}
+    >
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -107,7 +96,7 @@ export function Layout(props: LayoutProps) {
         {desc ? <meta name="description" content={desc} /> : null}
         <meta name="generator" content="miao-blog" />
         <meta name="color-scheme" content="light dark" />
-        <meta name="theme-color" content={theme === "minimal" ? "#ffffff" : "#fdf9f3"} />
+        <meta name="theme-color" content={colorMode === "dark" ? "#17161a" : "#fdfbf3"} />
         <meta property="og:title" content={fullTitle} />
         {desc ? <meta property="og:description" content={desc} /> : null}
         <meta property="og:type" content={ogType ?? "website"} />
@@ -121,7 +110,7 @@ export function Layout(props: LayoutProps) {
         {/* 主题必须在样式表之前决定，否则暗色用户会先看到一帧白屏 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k='miao:color',s=localStorage.getItem(k);if(s!=='light'&&s!=='dark'){s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=s;}catch(e){}})();`,
+            __html: `(function(){try{var m=document.documentElement.dataset.colorMode;var t=m==='dark'?'dark':m==='light'?'light':(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){}})();`,
           }}
         />
       </head>
@@ -146,14 +135,6 @@ export function Layout(props: LayoutProps) {
               ))}
             </nav>
             <div class="header-actions">
-              <button class="icon-btn" type="button" data-theme-toggle title={t(locale, "theme.to_dark")} aria-label={t(locale, "theme.to_dark")}>
-                <span class="theme-icon theme-icon--moon">
-                  <MoonIcon />
-                </span>
-                <span class="theme-icon theme-icon--sun">
-                  <SunIcon />
-                </span>
-              </button>
               {site.owner_github ? (
                 <a
                   class="icon-btn"
@@ -202,4 +183,4 @@ export function Layout(props: LayoutProps) {
   );
 }
 
-export { Mascot, GithubIcon, RssIcon, MoonIcon, SunIcon };
+export { Mascot, GithubIcon, RssIcon };

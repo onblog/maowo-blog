@@ -1,12 +1,12 @@
 import type { MiddlewareHandler } from "hono";
-import type { AppEnv, Locale, ThemeName } from "../types";
-import { ADMIN_COOKIE, READER_COOKIE, THEME_COOKIE, readCookie } from "../lib/cookies";
+import type { AppEnv, ColorMode, Locale } from "../types";
+import { ADMIN_COOKIE, READER_COOKIE, readCookie } from "../lib/cookies";
 import { readSession } from "../lib/session";
 import { getSite } from "../services/site";
 import { siteLocale } from "../lib/i18n";
 
 /**
- * 请求上下文：站点资料 + 主题偏好 + 两种会话身份。
+ * 请求上下文：站点资料 + 颜色模式 + 两种会话身份。
  *
  * 语言**不做运行时切换**：由部署时的 `SITE_LOCALE` 环境变量定死（默认 zh）。
  * 好处是 SSR 输出只有一种语言、没有「cookie 与页面文案不一致」的中间态，
@@ -21,8 +21,9 @@ export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
   // 语言只认部署时的环境变量，不再有运行时切换（也不回退到站点表）。
   const locale: Locale = siteLocale(c.env);
 
-  const themeCookie = readCookie(cookieHeader, THEME_COOKIE);
-  const theme: ThemeName = themeCookie === "minimal" ? "minimal" : site.theme === "minimal" ? "minimal" : "cute";
+  // 颜色模式由作者在后台决定（light / dark / auto），读者端不再提供切换入口
+  const colorMode: ColorMode =
+    site.color_mode === "dark" ? "dark" : site.color_mode === "light" ? "light" : "auto";
 
   const [readerSession, adminSession] = await Promise.all([
     readSession(c.env, readCookie(cookieHeader, READER_COOKIE)),
@@ -31,7 +32,7 @@ export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
 
   c.set("site", site);
   c.set("locale", locale);
-  c.set("theme", theme);
+  c.set("colorMode", colorMode);
 
   if (readerSession?.kind === "reader" && readerSession.user_json) {
     try {

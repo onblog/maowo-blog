@@ -2,20 +2,6 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "miao:color";
-
-  function applyTheme(value) {
-    document.documentElement.dataset.theme = value;
-    try {
-      localStorage.setItem(STORAGE_KEY, value);
-    } catch (e) {}
-  }
-  document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
-    });
-  });
-
   function api(path, options) {
     return fetch(path, options).then(function (res) {
       return res.json().then(

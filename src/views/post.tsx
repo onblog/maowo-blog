@@ -1,12 +1,12 @@
 import { t } from "../lib/i18n";
-import type { AdminUser, CommentNode, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ThemeName } from "../types";
+import type { AdminUser, CommentNode, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import { Layout, siteName } from "./layout";
 import { formatDate } from "./format";
 
 type Base = {
   site: SiteRow;
   locale: Locale;
-  theme: ThemeName;
+  colorMode: ColorMode;
   reader: ReaderUser | null;
   admin: AdminUser | null;
 };
@@ -192,7 +192,7 @@ function CommentSection({
 export function PostPage({
   site,
   locale,
-  theme,
+  colorMode,
   reader,
   admin,
   post,
@@ -218,7 +218,7 @@ export function PostPage({
     <Layout
       site={site}
       locale={locale}
-      theme={theme}
+      colorMode={colorMode}
       reader={reader}
       admin={admin}
       title={post.title}

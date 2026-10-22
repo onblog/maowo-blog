@@ -3,8 +3,8 @@ import type { Context } from "hono";
 /** 语言：站点 UI 与文章都只分这两档 */
 export type Locale = "zh" | "en";
 
-/** 主题：cute = 默认的猫窝风格；minimal = 给技术博主的极简模式 */
-export type ThemeName = "cute" | "minimal";
+/** 颜色模式：作者在后台定一个默认值，auto 表示跟随读者系统 */
+export type ColorMode = "light" | "dark" | "auto";
 
 /** 评论者身份（GitHub OAuth 换取，只存展示必需字段，不落 email） */
 export type ReaderUser = {
@@ -26,7 +26,7 @@ export type AppEnv = {
     reader: ReaderUser | null;
     admin: AdminUser | null;
     locale: Locale;
-    theme: ThemeName;
+    colorMode: ColorMode;
     site: SiteRow;
   };
 };
@@ -109,7 +109,7 @@ export type SiteRow = {
   owner_email: string | null;
   owner_location: string | null;
   owner_links: string;
-  theme: string;
+  color_mode: string;
   accent: string | null;
   comments_enabled: number;
   seo_description: string;

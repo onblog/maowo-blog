@@ -6,7 +6,6 @@ import {
   PREF_TTL_SECONDS,
   READER_COOKIE,
   READER_TTL_MS,
-  THEME_COOKIE,
   serializeCookie,
 } from "./cookies";
 import type { AppEnv } from "../types";
@@ -51,10 +50,3 @@ export function setLocaleCookie(c: Context<AppEnv>, locale: "zh" | "en"): void {
   }));
 }
 
-export function setThemeCookie(c: Context<AppEnv>, theme: "cute" | "minimal"): void {
-  append(c, serializeCookie(THEME_COOKIE, theme, {
-    maxAgeSeconds: PREF_TTL_SECONDS,
-    secure: isSecure(c),
-    httpOnly: false,
-  }));
-}
