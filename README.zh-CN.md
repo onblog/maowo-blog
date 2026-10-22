@@ -1,0 +1,167 @@
+<div align="center">
+
+<img src="public/img/favicon.svg" width="92" height="92" alt="猫窝博客" />
+
+# 猫窝博客（Miao Blog）
+
+**为读者而生的单人博客系统，跑在 Cloudflare Workers 上。**
+
+<p>
+  🇨🇳 中文 · <a href="README.md">🇺🇸 English</a>
+</p>
+
+<p>
+  <img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--only-e8836b" />
+  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Cloudflare%20Workers-f38020" />
+  <img alt="Storage" src="https://img.shields.io/badge/storage-D1%20%2B%20R2-2c2a26" />
+  <img alt="KV" src="https://img.shields.io/badge/KV-不需要-5f9e7f" />
+</p>
+
+</div>
+
+---
+
+## 为什么再造一个博客系统？
+
+WordPress 太重：PHP + MySQL + 一堆插件。Hexo / Hugo 很快，但要本地工具链、构建、发布流水线。Ghost 好用，但它是个产品，不是一个你能带走的文件。
+
+猫窝博客取中间那条路：
+
+| | WordPress | Hexo / Hugo | **猫窝博客** |
+| --- | --- | --- | --- |
+| 写作方式 | 浏览器（古腾堡） | 本地编辑器 + 构建 | **浏览器写 Markdown** |
+| 发布 | PHP + MySQL | 构建 + 部署 | **点一下就发，无构建** |
+| 托管 | VPS + 数据库 | 静态托管 | **Cloudflare Workers（免费额度）** |
+| 评论 | 插件生态 | 第三方挂件 | **内置，GitHub 登录** |
+| 账号体系 | 多用户 CMS | 无 | **设计上就是单人** |
+| 读者数据 | Cookie、统计脚本 | 无 | **不存邮箱，不埋点** |
+| 成本 | 5–20 元/月起 | 0 | **大多数博客 0 元** |
+
+它**刻意不是**多用户 CMS：一个人、一个博客，没有角色、没有权限矩阵、没有插件市场。这就是它的卖点。
+
+## 功能
+
+- **浏览器里写 Markdown**。预览由服务端渲染，用的是**与线上同一份模块**——预览即发布。
+- **阅读优先的排版**。正文 17.5px / 1.9 行高、720px 行宽、粘性目录、打印样式表。
+- **可爱为壳，内容为核**。大圆角、手绘猫 mascot，两套形态（`cute` / `minimal`），技术博主不必改一行代码就能关掉可爱。
+- **亮 / 暗双色**，在首次绘制前决定（内联脚本），未手动选择时跟随系统。
+- **评论走 GitHub 登录**，只申请 `read:user`，**不存邮箱**；可选「你的博客地址」字段，保留独立博客圈「评论 → 回访 → 反向链接」的老规矩。
+- **一键迁移**：上传 Hexo / Hugo / Jekyll 的 Markdown 目录 zip，或直接粘贴 Markdown。
+- **一键导出**：整站导出 JSON，可再导回。进得来，也出得去。
+- **部署即配置**：语言（`zh` / `en`）与后台账号密码都是环境变量，不做运行时开关。
+- **只依赖 D1 + R2**。没有 KV、没有 Queues、没有定时任务，边缘缓存用 Cache API。
+- **自带 SEO**：全文 RSS、sitemap、robots、canonical、Open Graph。
+
+## 部署
+
+> 前置条件：Cloudflare 账号 + Node.js 20+。
+
+### 1. 创建资源
+
+```bash
+git clone https://github.com/onblog/miao-blog.git
+cd miao-blog
+pnpm install
+
+npx wrangler d1 create miao-blog-db        # 复制输出的 database_id
+npx wrangler r2 bucket create miao-blog-media
+```
+
+把 `database_id` 填进 `wrangler.jsonc`（顶层与 `production` 两处）。
+
+### 2. 建表
+
+```bash
+npx wrangler d1 migrations apply miao-blog-db --remote
+```
+
+### 3. 配置密钥
+
+```bash
+npx wrangler secret put ADMIN_USER          # 例如 martin
+npx wrangler secret put ADMIN_PASS          # 足够长的随机串
+npx wrangler secret put GITHUB_CLIENT_ID    # 评论需要
+npx wrangler secret put GITHUB_CLIENT_SECRET
+```
+
+在 <https://github.com/settings/developers> 新建 OAuth App，回调地址填
+`https://你的域名/api/auth/github/callback`。GitHub 每个 App 只允许一个回调地址，所以本地开发要另建一个
+（`http://127.0.0.1:8789/api/auth/github/callback`）。
+
+### 4. 上线
+
+```bash
+npx wrangler deploy
+```
+
+打开 `/admin`，用第 3 步的账号登录，就可以写第一篇了。
+
+### 环境变量
+
+| 变量 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `SITE_URL` | 是 | — | 站点绝对地址，决定 OAuth 的 `redirect_uri` |
+| `SITE_LOCALE` | 否 | `zh` | **部署时定死**的界面语言：`zh` 或 `en` |
+| `ADMIN_USER` | 是 | — | `/admin` 账号（secret） |
+| `ADMIN_PASS` | 是 | — | `/admin` 密码（secret） |
+| `GITHUB_CLIENT_ID` | 评论需要 | — | 公开值，可放 `vars` |
+| `GITHUB_CLIENT_SECRET` | 评论需要 | — | **secret**，绝不进仓库 |
+| `ENV` | 否 | `development` | 生产环境设为 `production` |
+
+站名、签名、头像、友情链接、形态（`cute | minimal`）、评论开关，都在 `/admin/settings` 里改。
+
+## 迁移与导出
+
+- **导入**：`/admin/import` 上传 Markdown 目录的 `.zip`（Hexo `source/_posts`、Hugo `content/posts`、Jekyll
+  `_posts` 或任意 `.md` 目录）。识别 `title`、`date`、`tags`、`categories`、`slug`、`draft`、`excerpt`、`lang`。
+  图片不会自动下载，导入后可用外链或手动上传。
+- **导出**：`GET /api/admin/export` 返回 `{ site, posts: [...] }`。把这份 JSON 再 POST 回 `/admin/import`
+  即可完整恢复——没有锁定。
+
+## 目录结构
+
+```
+src/
+├── index.ts              Worker 入口
+├── site.tsx              Hono 应用：中间件顺序 + 路由注册
+├── lib/                  Markdown、i18n、Cookie、会话、slug、格式化
+├── middleware/           请求 id、守卫、请求上下文
+├── routes/               页面、后台、API、OAuth、偏好、图片、feed/sitemap
+├── services/             文章、评论、站点、标签、GitHub、导入器
+└── views/                SSR 组件（布局、首页、文章、后台）
+migrations/               D1 schema
+public/                   styles.css、app.js、admin.js、mascot 与 favicon
+tests/                    单元测试（vitest）
+```
+
+## 设计说明
+
+- **不用前端框架**。Hono JSX 在边缘渲染 HTML，约 10KB 原生 JS 负责主题、评论与编辑器。
+- **不做富文本**。只有 Markdown——服务端是唯一渲染器，XSS 由 `html: false` 从根上关掉，而不是靠 sanitizer 兜。
+- **不用 KV**。博客读路径是一条走索引的 D1 查询，热路径交给 Cache API，少一个收费资源。
+- **评论按纯文本渲染**（转义 + `white-space: pre-wrap`），不解析 Markdown/HTML，没有注入面。
+- 完整取舍记录见 [`docs/zh-CN/DESIGN.md`](docs/zh-CN/DESIGN.md)。
+
+## 常见问题
+
+**支持多作者吗？** 不支持。真需要就 fork 后自己加 `users` 表，schema 是刻意留小的。
+
+**能拿 Git 仓库当内容源吗？** 不支持。内容在 D1，迁移路径由一键导入覆盖。
+
+**换站会不会丢评论？** 评论在导出 JSON 里，一起走。
+
+**一定要 Cloudflare 吗？** 是，运行时就是 Workers + D1 + R2。
+
+**AI 用在哪？** 保留了一个可选的 Workers AI binding（预留给评论审核），不绑定它也不会崩。
+
+## 许可证
+
+[AGPL-3.0-only](LICENSE)。
+
+无法遵守 AGPL 的商业使用（闭源分发、改了不公开的 SaaS）需要另行获取商业授权——开 issue 说明来意即可。
+
+---
+
+<div align="center">
+为读者而做 🐾
+</div>

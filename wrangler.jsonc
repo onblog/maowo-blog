@@ -1,0 +1,88 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "miao-blog",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // 日志与跟踪：生产问题排查的第一手证据，默认全开。
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+
+  // 静态资源免费且不计 Worker 请求额度；未命中的路径回落到 Worker（Hono 处理页面与 /api/*）。
+  "assets": {
+    "directory": "./public"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "miao-blog-db",
+      // 由 `wrangler d1 create miao-blog-db` 生成，创建后填在这里。
+      "database_id": "d6877df7-9066-4605-bddb-6f6b47aedea8",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "R2_MEDIA",
+      "bucket_name": "miao-blog-media"
+    }
+  ],
+
+  // 可选能力：评论 AI 审核与摘要生成。不用 AI 的用户可以在控制台删掉这段绑定，
+  // 代码里所有 AI 调用都已经做了「绑定不存在就跳过」的降级。
+  "ai": {
+    "binding": "AI"
+  },
+
+  "dev": {
+    "port": 8789
+  },
+
+  "vars": {
+    "ENV": "development",
+    // 站点语言：部署时定死，运行时不做切换（zh 默认 / en）。
+    "SITE_LOCALE": "zh",
+    // SITE_URL 决定 OAuth 的 redirect_uri，必须与 GitHub OAuth App 注册的回调地址一致。
+    "SITE_URL": "http://127.0.0.1:8789",
+    // Client ID 是公开值；Secret 走 .dev.vars / `wrangler secret put`。
+    "GITHUB_CLIENT_ID": "",
+    // 后台账号密码：本地写 .dev.vars，生产用 `wrangler secret put ADMIN_USER` / `ADMIN_PASS`。
+    // 这里刻意留空——密码绝不进仓库。
+    "ADMIN_USER": ""
+  },
+
+  "routes": [
+    { "pattern": "blog.wordtk.com", "custom_domain": true }
+  ],
+
+  "env": {
+    "production": {
+      "name": "miao-blog",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "miao-blog-db",
+          "database_id": "d6877df7-9066-4605-bddb-6f6b47aedea8",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [{ "binding": "R2_MEDIA", "bucket_name": "miao-blog-media" }],
+      "ai": { "binding": "AI" },
+      "routes": [{ "pattern": "blog.wordtk.com", "custom_domain": true }],
+      "vars": {
+        "ENV": "production",
+        "SITE_LOCALE": "zh",
+        "SITE_URL": "https://blog.wordtk.com",
+        "GITHUB_CLIENT_ID": "",
+        "ADMIN_USER": ""
+      }
+    }
+  }
+}

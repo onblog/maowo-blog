@@ -1,0 +1,55 @@
+import type { MiddlewareHandler } from "hono";
+import type { AppEnv, Locale, ThemeName } from "../types";
+import { ADMIN_COOKIE, READER_COOKIE, THEME_COOKIE, readCookie } from "../lib/cookies";
+import { readSession } from "../lib/session";
+import { getSite } from "../services/site";
+
+/**
+ * 请求上下文：站点资料 + 主题偏好 + 两种会话身份。
+ *
+ * 语言**不做运行时切换**：由部署时的 `SITE_LOCALE` 环境变量定死（默认 zh）。
+ * 好处是 SSR 输出只有一种语言、没有「cookie 与页面文案不一致」的中间态，
+ * 也没有多一轮查询去判断该用哪套文案。
+ *
+ * 顺序上放在守卫中间件**之后**：被 405/403 拦掉的垃圾请求不会消耗一次 D1 查询。
+ */
+export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const site = await getSite(c.env);
+  const cookieHeader = c.req.header("cookie");
+
+  // 环境变量优先；没配时退回站点表里的默认语言；再兜底中文。
+  // 注意：先转成 string 再比较 —— 绑定类型会把字面量收窄成 "zh"，与 "en" 比较会被判为无重叠。
+  const configuredLocale = String(c.env.SITE_LOCALE ?? "");
+  const locale: Locale =
+    configuredLocale === "en" ? "en" : configuredLocale === "zh" ? "zh" : site.default_locale === "en" ? "en" : "zh";
+
+  const themeCookie = readCookie(cookieHeader, THEME_COOKIE);
+  const theme: ThemeName = themeCookie === "minimal" ? "minimal" : site.theme === "minimal" ? "minimal" : "cute";
+
+  const [readerSession, adminSession] = await Promise.all([
+    readSession(c.env, readCookie(cookieHeader, READER_COOKIE)),
+    readSession(c.env, readCookie(cookieHeader, ADMIN_COOKIE)),
+  ]);
+
+  c.set("site", site);
+  c.set("locale", locale);
+  c.set("theme", theme);
+
+  if (readerSession?.kind === "reader" && readerSession.user_json) {
+    try {
+      c.set("reader", JSON.parse(readerSession.user_json));
+    } catch {
+      c.set("reader", null);
+    }
+  }
+  if (adminSession?.kind === "admin" && adminSession.user_json) {
+    try {
+      c.set("admin", JSON.parse(adminSession.user_json));
+    } catch {
+      c.set("admin", null);
+    }
+  }
+
+  await next();
+};
+

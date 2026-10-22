@@ -1,0 +1,93 @@
+import { Hono } from "hono";
+import type { Context } from "hono";
+import { renderMarkdownWithToc } from "../lib/markdown";
+import type { AppEnv } from "../types";
+import { getSite, parseLinks } from "../services/site";
+import {
+  archiveGroups,
+  getNeighbours,
+  getPublishedBySlug,
+  incrementViews,
+  listPublished,
+  siteStats,
+} from "../services/posts";
+import { listTags, getTagBySlug } from "../services/tags";
+import { buildTree, countForPost, listVisible } from "../services/comments";
+import { HomePage } from "../views/home";
+import { AboutPage, ArchivePage, NotFoundPage, TagPage, TagsPage } from "../views/pages";
+import { PostPage } from "../views/post";
+
+/** 前台页面路由。`/:slug` 必须是最后一个注册的（兜底文章地址）。 */
+export const pages = new Hono<AppEnv>();
+
+function baseProps(c: Context<AppEnv>) {
+  return {
+    site: c.get("site"),
+    locale: c.get("locale"),
+    theme: c.get("theme"),
+    reader: c.get("reader"),
+    admin: c.get("admin"),
+  };
+}
+
+pages.get("/", async (c) => {
+  const page = Number(c.req.query("page") ?? 1);
+  const [list, stats] = await Promise.all([listPublished(c.env, { page }), siteStats(c.env)]);
+  return c.html(
+    <HomePage {...baseProps(c)} list={list} stats={stats} />,
+  );
+});
+
+pages.get("/archive", async (c) => {
+  const groups = await archiveGroups(c.env);
+  const total = groups.reduce((sum, group) => sum + group.posts.length, 0);
+  return c.html(<ArchivePage {...baseProps(c)} groups={groups} total={total} />);
+});
+
+pages.get("/tags", async (c) => {
+  const tags = await listTags(c.env);
+  return c.html(<TagsPage {...baseProps(c)} tags={tags} />);
+});
+
+pages.get("/tags/:slug", async (c) => {
+  const slug = decodeURIComponent(c.req.param("slug"));
+  const tag = await getTagBySlug(c.env, slug);
+  if (!tag) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
+  const list = await listPublished(c.env, { tagSlug: slug, perPage: 100 });
+  return c.html(<TagPage {...baseProps(c)} tagName={tag.name} posts={list.items} />);
+});
+
+pages.get("/about", async (c) => {
+  const site = await getSite(c.env);
+  return c.html(<AboutPage {...baseProps(c)} links={parseLinks(site.owner_links)} />);
+});
+
+// 文章详情：必须是页面路由的最后一个，否则会把 /archive 之类的地址吃掉
+pages.get("/:slug", async (c) => {
+  const slug = decodeURIComponent(c.req.param("slug"));
+  const post = await getPublishedBySlug(c.env, slug);
+  if (!post) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
+
+  const { html, toc } = renderMarkdownWithToc(post.content_md);
+  const [neighbours, commentRows, commentCount] = await Promise.all([
+    getNeighbours(c.env, post),
+    listVisible(c.env, post.id),
+    countForPost(c.env, post.id),
+  ]);
+
+  // 阅读数在渲染后自增：这一次的展示值是本次访问前的数，语义上是「此前被看过多少次」
+  c.executionCtx.waitUntil(incrementViews(c.env, post.id));
+
+  return c.html(
+    <PostPage
+      {...baseProps(c)}
+      post={post}
+      html={html}
+      toc={toc}
+      prev={neighbours.prev}
+      next={neighbours.next}
+      comments={buildTree(commentRows)}
+      commentCount={commentCount}
+    />,
+  );
+});

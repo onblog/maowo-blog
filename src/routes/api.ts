@@ -1,0 +1,306 @@
+import { Hono } from "hono";
+import type { Context } from "hono";
+import { ADMIN_COOKIE, ADMIN_TTL_MS, readCookie } from "../lib/cookies";
+import { safeUrl, timingSafeEqual } from "../lib/html";
+import { createSession, deleteSession, pruneExpiredSessions } from "../lib/session";
+import { clearAdminCookie, setAdminCookie } from "../lib/session-cookie";
+import { requireAdminApi } from "../middleware/guards";
+import { COMMENT_COOLDOWN_SECONDS, createComment, lastCommentAt, remove, setStatus } from "../services/comments";
+import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
+import { renderMarkdown } from "../lib/markdown";
+import { getSite, updateSite } from "../services/site";
+import { parsePlain, parseZip } from "../services/importer";
+import type { AppEnv, Locale } from "../types";
+
+export const api = new Hono<AppEnv>();
+
+// ── 登录限流：isolate 内存计数。冷启动会重置，但足以挡住脚本化爆破；
+//    更强的防护交给 Cloudflare Access（可选开启）或 WAF。
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+
+function clientIp(c: Context<AppEnv>): string {
+  return c.req.header("cf-connecting-ip") ?? "local";
+}
+
+function throttleLogin(ip: string): { blocked: boolean; retryAfter: number } {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt < now) return { blocked: false, retryAfter: 0 };
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) {
+    return { blocked: true, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  return { blocked: false, retryAfter: 0 };
+}
+
+function recordFailure(ip: string): void {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt < now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+}
+
+// ── 评论 ────────────────────────────────────────────────────────────────────
+
+api.post("/comments", async (c) => {
+  const reader = c.get("reader");
+  if (!reader) return c.json({ error: "unauthorized" }, 401);
+
+  const body = await c.req.json<{
+    postId?: string;
+    postSlug?: string;
+    parentId?: string | null;
+    body?: string;
+    website?: string;
+  }>();
+  const postId = (body.postId ?? "").trim();
+  const postSlug = (body.postSlug ?? "").trim();
+  const text = (body.body ?? "").trim();
+  if (!postId && !postSlug) return c.json({ error: "post_required" }, 400);
+  if (!text) return c.json({ error: "body_required" }, 400);
+
+  const post = postId ? await getById(c.env, postId) : await getPublishedBySlug(c.env, postSlug);
+  if (!post || post.status !== "published") return c.json({ error: "post_not_found" }, 404);
+
+  const site = await getSite(c.env);
+  if (site.comments_enabled !== 1) return c.json({ error: "comments_disabled" }, 403);
+
+  const last = await lastCommentAt(c.env, reader.githubId);
+  if (last && Date.now() - last < COMMENT_COOLDOWN_SECONDS * 1000) {
+    return c.json({ error: "too_fast", retryAfter: COMMENT_COOLDOWN_SECONDS }, 429);
+  }
+
+  const website = body.website ? safeUrl(body.website) : null;
+  const comment = await createComment(c.env, {
+    postId: post.id,
+    parentId: body.parentId ?? null,
+    body: text,
+    website,
+    reader,
+  });
+
+  return c.json({ ok: true, comment }, 201);
+});
+
+// ── 后台：会话 ──────────────────────────────────────────────────────────────
+
+api.post("/admin/login", async (c) => {
+  const ip = clientIp(c);
+  const throttle = throttleLogin(ip);
+  if (throttle.blocked) {
+    c.header("retry-after", String(throttle.retryAfter));
+    return c.json({ error: "too_many_attempts", retryAfter: throttle.retryAfter }, 429);
+  }
+
+  const body = await c.req.json<{ username?: string; password?: string }>();
+  const expectedUser = c.env.ADMIN_USER ?? "";
+  const expectedPass = c.env.ADMIN_PASS ?? "";
+
+  if (!expectedUser || !expectedPass) {
+    return c.json({ error: "admin_not_configured", message: "请在部署时设置 ADMIN_USER / ADMIN_PASS" }, 500);
+  }
+
+  const userOk = timingSafeEqual(body.username ?? "", expectedUser);
+  const passOk = timingSafeEqual(body.password ?? "", expectedPass);
+  if (!userOk || !passOk) {
+    recordFailure(ip);
+    return c.json({ error: "invalid_credentials" }, 401);
+  }
+
+  loginAttempts.delete(ip);
+  await pruneExpiredSessions(c.env);
+  const token = await createSession(c.env, "admin", { username: expectedUser }, ADMIN_TTL_MS);
+  setAdminCookie(c, token);
+  return c.json({ ok: true });
+});
+
+api.post("/admin/logout", async (c) => {
+  const token = readCookie(c.req.header("cookie"), ADMIN_COOKIE);
+  await deleteSession(c.env, token);
+  clearAdminCookie(c);
+  return c.json({ ok: true });
+});
+
+// ── 后台：文章 ──────────────────────────────────────────────────────────────
+
+type PostBody = {
+  title?: string;
+  slug?: string;
+  content_md?: string;
+  excerpt?: string;
+  cover_image?: string;
+  cover_alt?: string;
+  lang?: Locale;
+  pinned?: boolean;
+  status?: "draft" | "published";
+  tags?: string;
+};
+
+function normalizePostBody(body: PostBody): { ok: true; value: PostBody & { title: string; content_md: string } } | { ok: false; error: string } {
+  const title = (body.title ?? "").trim();
+  const content = body.content_md ?? "";
+  if (!title) return { ok: false, error: "title_required" };
+  if (content.length > 512 * 1024) return { ok: false, error: "content_too_large" };
+  return { ok: true, value: { ...body, title: title.slice(0, 200), content_md: content } };
+}
+
+api.post("/admin/posts", requireAdminApi, async (c) => {
+  const parsed = normalizePostBody(await c.req.json<PostBody>());
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  const post = await createPost(c.env, parsed.value);
+  return c.json({ ok: true, post }, 201);
+});
+
+api.put("/admin/posts/:id", requireAdminApi, async (c) => {
+  const parsed = normalizePostBody(await c.req.json<PostBody>());
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  try {
+    const post = await updatePost(c.env, c.req.param("id"), parsed.value);
+    return c.json({ ok: true, post });
+  } catch {
+    return c.json({ error: "post_not_found" }, 404);
+  }
+});
+
+api.delete("/admin/posts/:id", requireAdminApi, async (c) => {
+  await deletePost(c.env, c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+// ── 后台：评论 ──────────────────────────────────────────────────────────────
+
+api.post("/admin/comments/:id/status", requireAdminApi, async (c) => {
+  const body = await c.req.json<{ status?: string }>();
+  const status = body.status === "hidden" ? "hidden" : body.status === "visible" ? "visible" : null;
+  if (!status) return c.json({ error: "invalid_status" }, 400);
+  await setStatus(c.env, c.req.param("id"), status);
+  return c.json({ ok: true });
+});
+
+api.delete("/admin/comments/:id", requireAdminApi, async (c) => {
+  await remove(c.env, c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+// ── 后台：站点设置 ──────────────────────────────────────────────────────────
+
+api.put("/admin/site", requireAdminApi, async (c) => {
+  const body = await c.req.json<Record<string, unknown>>();
+  const patch: Record<string, string | number | null> = {};
+  const stringFields = [
+    "name_zh",
+    "name_en",
+    "tagline_zh",
+    "tagline_en",
+    "owner_name",
+    "owner_bio_zh",
+    "owner_bio_en",
+    "owner_avatar",
+    "owner_github",
+    "owner_email",
+    "owner_location",
+    "owner_links",
+    "default_locale",
+    "theme",
+    "accent",
+    "seo_description_zh",
+    "seo_description_en",
+  ];
+  for (const field of stringFields) {
+    if (typeof body[field] === "string") patch[field] = (body[field] as string).slice(0, 2000);
+  }
+  if (typeof body.comments_enabled === "boolean") patch.comments_enabled = body.comments_enabled ? 1 : 0;
+  if (typeof body.comments_enabled === "number") patch.comments_enabled = body.comments_enabled ? 1 : 0;
+
+  const site = await updateSite(c.env, patch);
+  return c.json({ ok: true, site });
+});
+
+api.post("/admin/preview", requireAdminApi, async (c) => {
+  const body = await c.req.json<{ content_md?: string }>();
+  return c.json({ ok: true, html: renderMarkdown(body.content_md ?? "") });
+});
+
+// ── 后台：全站导出（「进得来也出得去」是抢存量用户的信任前提）──────────────
+api.get("/admin/export", requireAdminApi, async (c) => {
+  const site = await getSite(c.env);
+  const { results } = await c.env.DB.prepare(
+    "SELECT slug, title, content_md, excerpt, cover_image, lang, status, pinned, published_at, created_at FROM posts ORDER BY created_at",
+  ).all<Record<string, unknown>>();
+  c.header("content-disposition", 'attachment; filename="miao-blog-export.json"');
+  return c.json({ version: 1, exported_at: Date.now(), site, posts: results });
+});
+
+// ── 后台：一键迁移 ──────────────────────────────────────────────────────────
+
+api.post("/admin/import", requireAdminApi, async (c) => {
+  const contentType = c.req.header("content-type") ?? "";
+  let imported = 0;
+  let skipped = 0;
+  let total = 0;
+  const errors: string[] = [];
+
+  const posts = [] as Awaited<ReturnType<typeof parseZip>>;
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await c.req.formData();
+    const file = form.get("file");
+    if (file instanceof File) {
+      const buffer = await file.arrayBuffer();
+      try {
+        posts.push(...(await parseZip(buffer)));
+      } catch (err) {
+        return c.json({ error: "zip_parse_failed", message: err instanceof Error ? err.message : String(err) }, 400);
+      }
+    }
+    const text = form.get("text");
+    if (typeof text === "string" && text.trim()) posts.push(...parsePlain(text));
+  } else {
+    const body = await c.req.json<{ text?: string; posts?: Array<Record<string, unknown>> }>();
+    if (body.text) posts.push(...parsePlain(body.text));
+    // 本项目的导出 JSON 也能直接导回（换站/回滚都走这条路）
+    if (Array.isArray(body.posts)) {
+      for (const item of body.posts) {
+        const title = String(item.title ?? "").trim();
+        if (!title) continue;
+        posts.push({
+          title,
+          slug: String(item.slug ?? ""),
+          content: String(item.content_md ?? item.content ?? ""),
+          excerpt: String(item.excerpt ?? ""),
+          lang: item.lang === "en" ? "en" : "zh",
+          tags: "",
+          draft: item.status === "draft",
+          date: typeof item.published_at === "number" ? item.published_at : null,
+        });
+      }
+    }
+  }
+
+  const limited = posts.slice(0, 200);
+  total = limited.length;
+
+  for (const item of limited) {
+    try {
+      await createPost(c.env, {
+        title: item.title,
+        slug: item.slug,
+        content_md: item.content,
+        excerpt: item.excerpt,
+        lang: item.lang,
+        tags: item.tags,
+        status: item.draft ? "draft" : "published",
+      });
+      imported += 1;
+    } catch (err) {
+      skipped += 1;
+      if (errors.length < 5) errors.push(`${item.title}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  return c.json({ ok: true, total, imported, skipped, errors });
+});

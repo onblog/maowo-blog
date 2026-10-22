@@ -1,0 +1,42 @@
+{
+  "name": "miao-blog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Miao Blog — a single-author blog for Cloudflare Workers. 猫窝博客：为读者而生的单人博客系统。",
+  "packageManager": "pnpm@10.32.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm cf-typegen && pnpm typecheck && pnpm test",
+    "db:migrate:local": "wrangler d1 migrations apply miao-blog-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply miao-blog-db --remote",
+    "db:exec:local": "wrangler d1 execute miao-blog-db --local --command"
+  },
+  "dependencies": {
+    "highlight.js": "^11.12.0",
+    "hono": "^4.13.11",
+    "markdown-it": "^15.0.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@types/markdown-it": "^14.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.144.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+# 复制为 .dev.vars 后填写（.dev.vars 已在 .gitignore 中，不会进仓库）
+#
+# GitHub OAuth App：https://github.com/settings/developers
+#   Authorization callback URL = <SITE_URL>/api/auth/github/callback
+#   本地与生产各建一个 App（GitHub 每个 App 只允许一个回调地址）
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# 后台 /admin 的登录账号。密码请用足够长的随机串。
+ADMIN_USER=admin
+ADMIN_PASS=change-me-please

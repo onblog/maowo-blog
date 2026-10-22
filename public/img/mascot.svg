@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">
+  <path d="M12 26 10 8l16 9a30 30 0 0 1 12 0l16-9-2 18c3 4 5 9 5 14 0 12-11 20-25 20S7 52 7 40c0-5 2-10 5-14Z"
+        fill="var(--mascot-fill, #FFF3E9)" stroke="var(--mascot-stroke, #2C2A26)" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="24" cy="36" r="3.4" fill="var(--mascot-stroke, #2C2A26)"/>
+  <circle cx="40" cy="36" r="3.4" fill="var(--mascot-stroke, #2C2A26)"/>
+  <path d="M28 45c1.6 1.6 2.7 2.2 4 2.2s2.4-.6 4-2.2" stroke="var(--mascot-stroke, #2C2A26)" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M6 40H1M63 40h-5" stroke="var(--mascot-stroke, #2C2A26)" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>
+</svg>
