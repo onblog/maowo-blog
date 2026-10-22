@@ -783,27 +783,38 @@ button {
   max-height: 420px;
 }
 
+/*
+ * 正文独占一行并水平居中；目录不参与布局，固定在右侧留白里。
+ * 这样正文内部的居中元素（图、代码块、表格）才是真正的页面居中，
+ * 不会被 220px 的目录列推偏。
+ */
 .post__layout {
-  display: grid;
-  grid-template-columns: minmax(0, var(--reading-width)) 220px;
-  gap: 48px;
-  justify-content: center;
-  align-items: start;
+  display: block;
 }
 
 .post__body {
-  min-width: 0;
+  max-width: var(--reading-width);
+  margin: 0 auto;
 }
 
 /* ── 目录 ──────────────────────────────────────────────────────────────── */
 .toc {
-  position: sticky;
+  position: fixed;
   top: 92px;
-  max-height: calc(100vh - 120px);
+  left: calc(50% + var(--reading-width) / 2 + 34px);
+  width: 200px;
+  max-height: calc(100vh - 140px);
   overflow-y: auto;
   padding-left: 16px;
   border-left: 2px solid var(--hairline);
   font-size: 13.5px;
+}
+
+/* 视口窄到放不下右侧留白时直接隐藏（原本 980px，因为目录已脱离文档流要更早收） */
+@media (max-width: 1200px) {
+  .toc {
+    display: none;
+  }
 }
 .toc__title {
   margin: 0 0 10px;
@@ -958,7 +969,9 @@ button {
 .code-block__head {
   display: flex;
   align-items: center;
-  padding: 7px 16px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px 7px 16px;
   background: color-mix(in srgb, var(--code-bg) 88%, #fff);
   border-bottom: 1px solid color-mix(in srgb, var(--code-bg) 60%, #fff);
 }
@@ -970,7 +983,29 @@ button {
   text-transform: uppercase;
   color: var(--code-comment);
 }
-.prose .code-block > .code-block__pre {
+.prose .code-block > .code-block__copy {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--code-comment);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.code-block__copy:hover {
+  color: var(--code-ink);
+  background: rgb(255 255 255 / 10%);
+}
+.code-block__copy.is-copied {
+  color: var(--ok);
+}
+
+.code-block__pre {
   margin: 0;
   border: none;
   border-radius: 0;

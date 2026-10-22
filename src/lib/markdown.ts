@@ -212,9 +212,19 @@ md.renderer.rules.fence = (tokens, idx) => {
   if (!known) return `<pre><code>${body}</code></pre>\n`;
 
   const label = LANGUAGE_LABELS[known] ?? known;
+  /*
+   * 复制按钮与语言标签同一行、贴在右侧。
+   * 用事件委托绑定（app.js / admin.js 各一段），所以编辑器预览里动态插入的代码块也能复制。
+   */
+  const copyButton =
+    `<button class="code-block__copy" type="button" data-copy-code aria-label="复制代码" title="复制代码">` +
+    `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">` +
+    `<rect x="5.5" y="5.5" width="8" height="9" rx="1.6" stroke="currentColor" stroke-width="1.5"/>` +
+    `<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>` +
+    `</svg></button>`;
   return (
     `<div class="code-block">` +
-    `<div class="code-block__head"><span class="code-block__lang">${escapeHtml(label)}</span></div>` +
+    `<div class="code-block__head"><span class="code-block__lang">${escapeHtml(label)}</span>${copyButton}</div>` +
     `<pre class="code-block__pre"><code class="hljs language-${escapeHtml(known)}">${body}</code></pre>` +
     `</div>\n`
   );

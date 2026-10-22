@@ -26,6 +26,35 @@
     });
   });
 
+  // ── 代码块复制（事件委托：编辑器预览里动态插入的代码块也覆盖）──
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest("[data-copy-code]");
+    if (!btn) return;
+    var block = btn.closest(".code-block");
+    var code = block ? block.querySelector("code") : null;
+    if (!code) return;
+    var text = code.textContent || "";
+
+    function markDone() {
+      btn.classList.add("is-copied");
+      btn.title = "已复制";
+      btn.setAttribute("aria-label", "已复制");
+      setTimeout(function () {
+        btn.classList.remove("is-copied");
+        btn.title = "复制代码";
+        btn.setAttribute("aria-label", "复制代码");
+      }, 1500);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(markDone, function () {
+        window.prompt("复制下面的代码：", text);
+      });
+    } else {
+      window.prompt("复制下面的代码：", text);
+    }
+  });
+
   // ── 拉绳小猫：滚过一屏才出现，点击回到顶部 ───────────────────────────
   var catRope = document.querySelector("[data-cat-rope]");
   if (catRope) {

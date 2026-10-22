@@ -76,8 +76,8 @@ pages.get("/about", async (c) => {
   return c.html(<AboutPage {...baseProps(c)} links={parseLinks(site.owner_links)} />);
 });
 
-// 文章详情：必须是页面路由的最后一个，否则会把 /archive 之类的地址吃掉
-pages.get("/:slug", async (c) => {
+// 文章详情：固定在 /p/{数字} 下 —— 与 /archive、/about、/series 这些静态页彻底分开
+pages.get("/p/:slug", async (c) => {
   const slug = decodeURIComponent(c.req.param("slug"));
   const post = await getPublishedBySlug(c.env, slug);
   if (!post) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
@@ -104,4 +104,11 @@ pages.get("/:slug", async (c) => {
       commentCount={commentCount}
     />,
   );
+});
+
+// 兼容旧地址：/{数字} 301 到 /p/{数字}，已分享过的链接不会断
+pages.get("/:slug", (c) => {
+  const slug = decodeURIComponent(c.req.param("slug"));
+  if (/^\d+$/.test(slug)) return c.redirect(`/p/${slug}`, 301);
+  return c.html(<NotFoundPage {...baseProps(c)} />, 404);
 });

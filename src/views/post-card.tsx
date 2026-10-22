@@ -8,7 +8,7 @@ export function PostCard({ post, locale, compact = false }: { post: PostSummary;
   return (
     <article class={`post-card${compact ? " post-card--compact" : ""}`}>
       <h2 class="post-card__title">
-        <a href={`/${post.slug}`}>{post.title}</a>
+        <a href={`/p/${post.slug}`}>{post.title}</a>
       </h2>
       {post.excerpt ? <p class="post-card__excerpt">{post.excerpt}</p> : null}
       <div class="post-card__meta">

@@ -46,7 +46,7 @@ export function ArchivePage({
               <ul class="archive__list">
                 {group.posts.map((post) => (
                   <li class="archive__item">
-                    <a class="archive__link" href={`/${post.slug}`}>
+                    <a class="archive__link" href={`/p/${post.slug}`}>
                       {post.title}
                     </a>
                     <time class="archive__date" datetime={new Date(post.published_at ?? post.created_at).toISOString()}>
@@ -131,7 +131,7 @@ export function TagPage({
         {posts.map((post) => (
           <article class="post-card">
             <h2 class="post-card__title">
-              <a href={`/${post.slug}`}>{post.title}</a>
+              <a href={`/p/${post.slug}`}>{post.title}</a>
             </h2>
             <div class="post-card__meta">
               <time>{formatDate(post.published_at ?? post.created_at, locale)}</time>
@@ -282,7 +282,7 @@ export function SeriesPage({
         {posts.map((post, index) => (
           <li class="series-posts__item">
             <span class="series-posts__index">{index + 1}</span>
-            <a class="series-posts__link" href={`/${post.slug}`}>
+            <a class="series-posts__link" href={`/p/${post.slug}`}>
               {post.title}
             </a>
             <time class="series-posts__date" datetime={new Date(post.published_at ?? post.created_at).toISOString()}>

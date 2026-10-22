@@ -22,6 +22,31 @@
     });
   });
 
+  // ── 代码块复制（编辑器预览区也会渲染同样的按钮）──
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest("[data-copy-code]");
+    if (!btn) return;
+    var block = btn.closest(".code-block");
+    var code = block ? block.querySelector("code") : null;
+    if (!code) return;
+    var text = code.textContent || "";
+    function markDone() {
+      btn.classList.add("is-copied");
+      btn.title = "已复制";
+      setTimeout(function () {
+        btn.classList.remove("is-copied");
+        btn.title = "复制代码";
+      }, 1500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(markDone, function () {
+        window.prompt("复制下面的代码：", text);
+      });
+    } else {
+      window.prompt("复制下面的代码：", text);
+    }
+  });
+
   function api(path, options) {
     return fetch(path, options).then(function (res) {
       return res.json().then(

@@ -223,7 +223,7 @@ export function PostPage({
       admin={admin}
       title={post.title}
       description={post.excerpt ?? undefined}
-      canonicalPath={`/${post.slug}`}
+      canonicalPath={`/p/${post.slug}`}
       ogType="article"
       ogImage={post.cover_image}
       activeNav="post"
@@ -297,7 +297,7 @@ export function PostPage({
 
           <nav class="post-nav" aria-label="Post navigation">
             {prev ? (
-              <a class="post-nav__item" href={`/${prev.slug}`} rel="prev">
+              <a class="post-nav__item" href={`/p/${prev.slug}`} rel="prev">
                 <span class="post-nav__label">← {t(locale, "post.prev")}</span>
                 <span class="post-nav__title">{prev.title}</span>
               </a>
@@ -305,7 +305,7 @@ export function PostPage({
               <span />
             )}
             {next ? (
-              <a class="post-nav__item post-nav__item--next" href={`/${next.slug}`} rel="next">
+              <a class="post-nav__item post-nav__item--next" href={`/p/${next.slug}`} rel="next">
                 <span class="post-nav__label">{t(locale, "post.next")} →</span>
                 <span class="post-nav__title">{next.title}</span>
               </a>

@@ -165,7 +165,7 @@ export function AdminPostsPage({
                 </div>
                 <div class="admin-post__actions">
                   {post.status === "published" ? (
-                    <a class="btn btn--ghost btn--sm" href={`/${post.slug}`} target="_blank" rel="noopener">
+                    <a class="btn btn--ghost btn--sm" href={`/p/${post.slug}`} target="_blank" rel="noopener">
                       {t(locale, "admin.editor.view")}
                     </a>
                   ) : null}

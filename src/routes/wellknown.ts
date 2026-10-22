@@ -37,7 +37,7 @@ wellKnown.get("/feed.xml", async (c) => {
 
   const items = results
     .map((post) => {
-      const url = `${baseUrl(c.env)}/${post.slug}`;
+      const url = `${baseUrl(c.env)}/p/${post.slug}`;
       const published = post.published_at ?? post.created_at;
       return `    <item>
       <title>${escapeXml(post.title)}</title>
@@ -76,7 +76,7 @@ wellKnown.get("/sitemap.xml", async (c) => {
   const entries = [
     ...staticPaths.map((path) => ({ loc: `${baseUrl(c.env)}${path}`, lastmod: new Date().toISOString() })),
     ...results.map((row) => ({
-      loc: `${baseUrl(c.env)}/${row.slug}`,
+      loc: `${baseUrl(c.env)}/p/${row.slug}`,
       lastmod: new Date(row.updated_at).toISOString(),
     })),
   ];
