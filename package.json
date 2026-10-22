@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Miao Blog — a single-author blog for Cloudflare Workers. 猫窝博客：为读者而生的单人博客系统。",
+  "description": "Miao Blog — a personal blog for Cloudflare Workers. 猫窝博客：为读者而生的个人博客系统。",
   "packageManager": "pnpm@10.32.0",
   "engines": {
     "node": ">=20"

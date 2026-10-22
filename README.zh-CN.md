@@ -4,7 +4,7 @@
 
 # 猫窝博客（Miao Blog）
 
-**为读者而生的单人博客系统，跑在 Cloudflare Workers 上。**
+**为读者而生的个人博客系统，跑在 Cloudflare Workers 上。**
 
 <p>
   🇨🇳 中文 · <a href="README.md">🇺🇸 English</a>

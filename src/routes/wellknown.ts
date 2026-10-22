@@ -6,7 +6,7 @@ import type { PostRow } from "../types";
 /**
  * 机器可读入口：RSS / sitemap / robots。
  *
- * 单人博客的 RSS 比任何社交分发都重要 —— 存量博客用户的第一迁移成本就是
+ * 个人博客的 RSS 比任何社交分发都重要 —— 存量博客用户的第一迁移成本就是
  * "订阅者会不会丢"。所以 RSS 输出完整正文（content:encoded），订阅器里能直接读。
  */
 export const wellKnown = new Hono<AppEnv>();

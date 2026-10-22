@@ -1,6 +1,6 @@
 # Miao Blog — design notes
 
-> Scope: single-author blog on Cloudflare Workers. This document records the decisions that are expensive to reverse,
+> Scope: personal blog on Cloudflare Workers. This document records the decisions that are expensive to reverse,
 > and the ones deliberately postponed.
 
 ## 1. Positioning

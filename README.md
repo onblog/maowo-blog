@@ -4,8 +4,8 @@
 
 # Miao Blog
 
-**A single-author blog for Cloudflare Workers.**
-猫窝博客 —— 为读者而生的单人博客系统。
+**A personal blog for Cloudflare Workers.**
+猫窝博客 —— 为读者而生的个人博客系统。
 
 <p>
   <a href="README.zh-CN.md">🇨🇳 中文</a> · 🇺🇸 English
@@ -33,7 +33,7 @@ it is a product, not a file you own. Miao Blog sits in between:
 | Publish | PHP + MySQL | static build + deploy | **one click, no build** |
 | Hosting | VPS + DB | static host | **Cloudflare Workers (free tier)** |
 | Comments | plugin zoo | third-party widget | **built-in, GitHub login** |
-| Author accounts | multi-user CMS | n/a | **single author by design** |
+| Author accounts | multi-user CMS | n/a | **personal blog — no accounts** |
 | Reader data | cookies, trackers | none | **none — no email stored** |
 | Cost | ~$5–20/mo | $0 | **$0 for most blogs** |
 
