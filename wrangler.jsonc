@@ -5,6 +5,10 @@
   "compatibility_date": "2026-10-22",
   "compatibility_flags": ["nodejs_compat"],
 
+  // 变量由部署环境管理：不要用仓库里的默认值覆盖 Cloudflare Dashboard
+  // 上配置的 SITE_URL（生产域名只在部署侧出现）。
+  "keep_vars": true,
+
   // 日志与跟踪：生产问题排查的第一手证据，默认全开。
   "observability": {
     "enabled": true,
