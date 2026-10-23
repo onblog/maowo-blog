@@ -105,6 +105,12 @@ development (`http://127.0.0.1:8789/api/auth/github/callback`).
 npx wrangler deploy --env production
 ```
 
+Workers Builds does this on every push to `main`, in about **1–3 minutes**. To check whether a push
+actually went live, use the dashboard's **Workers → maowo-blog → Builds** (one build per commit, with
+duration and failure logs) or `npx wrangler versions list --name maowo-blog | grep Created | tail -3`.
+Do **not** use `wrangler deployments list`: it only reflects deployments it created itself, so a
+Workers Builds deploy leaves it looking unchanged.
+
 Then open `/admin`, sign in with `admin` / `admin`, change the credentials when asked, and write your
 first post.
 

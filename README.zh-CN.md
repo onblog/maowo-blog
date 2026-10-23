@@ -101,6 +101,12 @@ npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler deploy --env production
 ```
 
+push 到 `main` 后 Workers Builds 会自动构建并部署，一次大约 **1–3 分钟**。想确认某次 push 有没有
+真的上线，看 Dashboard 的 **Workers → maowo-blog → 构建（构建历史）**（每次提交一条构建，带耗时与
+失败日志），或 `npx wrangler versions list --name maowo-blog | grep Created | tail -3`。
+**不要看 `wrangler deployments list`**：它只反映经它自己创建的部署，Workers Builds 的部署不会刷新这个
+列表，用它判断会得到「看起来没触发」的错觉。
+
 打开 `/admin`，用 `admin` / `admin` 登录，按提示改掉账号密码，就可以写第一篇了。
 
 ### 环境变量
