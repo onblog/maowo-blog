@@ -500,8 +500,25 @@ function ImageField({
 }) {
   // 圆形（头像）把小预览放在输入框同一行，避免它单独占一行把网格撑高；
   // 封面这类大图仍放在下方展示。
+  //
+  // 有图时缩略图右上角浮一个删除按钮：此前只能靠手改地址栏里的 URL 才能撤掉封面。
+  // 按钮常驻 DOM，由 `data-has-image` 控制显示 —— 上传成功后只换 <img>，不再清空容器。
+  const removeButton = (
+    <button
+      class="image-field__remove"
+      type="button"
+      data-remove-image
+      title={t(locale, "admin.editor.image_remove")}
+      aria-label={t(locale, "admin.editor.image_remove")}
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </svg>
+    </button>
+  );
+
   return (
-    <div class={`field image-field${rounded ? " image-field--inline" : ""}`}>
+    <div class={`field image-field${rounded ? " image-field--inline" : ""}`} data-has-image={value ? "1" : "0"}>
       <span class="field__label">{label}</span>
       <div class="image-field__row">
         <input class="field__input" name={name} value={value ?? ""} placeholder="https://…" data-image-url />
@@ -509,8 +526,11 @@ function ImageField({
           {t(locale, "admin.settings.upload")}
         </button>
         {rounded ? (
-          <span class="image-field__thumb" data-image-preview>
-            {value ? <img src={value} alt="" /> : null}
+          <span class="image-field__thumb-wrap">
+            <span class="image-field__thumb" data-image-preview>
+              {value ? <img src={value} alt="" /> : null}
+            </span>
+            {removeButton}
           </span>
         ) : null}
         <input
@@ -523,6 +543,7 @@ function ImageField({
       {rounded ? null : (
         <div class="image-field__preview" data-image-preview>
           {value ? <img src={value} alt="" /> : null}
+          {removeButton}
         </div>
       )}
     </div>

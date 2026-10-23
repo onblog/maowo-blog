@@ -8,7 +8,7 @@ import type { Locale } from "../types";
  * 静态资源（styles.css / app.js / admin.js / export-zip.js）的缓存版本号。
  * 改了这些文件就把数字 +1 —— 浏览器与边缘才会立刻换新，否则可能继续命中旧缓存。
  */
-export const ASSET_VERSION = "18";
+export const ASSET_VERSION = "22";
 
 export const BRAND = {
   repo: "onblog/maowo-blog",

@@ -666,6 +666,50 @@
     });
   });
 
+  // 手动粘贴地址时也要让删除按钮跟着出现/收起，不能只靠上传流程切换。
+  document.querySelectorAll("[data-image-url]").forEach(function (urlInput) {
+    urlInput.addEventListener("input", function () {
+      var field = urlInput.closest(".image-field");
+      if (!field) return;
+      field.setAttribute("data-has-image", urlInput.value.trim() ? "1" : "0");
+      // 地址变了但预览图还是旧的 → 直接按新地址重画，避免「地址和图对不上」
+      var preview = field.querySelector("[data-image-preview]");
+      if (!preview) return;
+      var value = urlInput.value.trim();
+      var img = preview.querySelector("img");
+      if (!value) {
+        if (img) img.remove();
+        return;
+      }
+      if (img) {
+        img.src = value;
+      } else {
+        img = document.createElement("img");
+        img.src = value;
+        img.alt = "";
+        preview.appendChild(img);
+      }
+    });
+  });
+
+  // 移除已上传的图片：清空地址栏，缩略图与按钮一起收起。
+  // 只从表单撤下，不删 R2 上的对象 —— 同一张图可能还被别的文章引用。
+  document.querySelectorAll("[data-remove-image]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var field = btn.closest(".image-field");
+      if (!field) return;
+      var urlInput = field.querySelector("[data-image-url]");
+      var preview = field.querySelector("[data-image-preview]");
+      if (urlInput) urlInput.value = "";
+      if (preview) {
+        var img = preview.querySelector("img");
+        if (img) img.remove();
+      }
+      field.setAttribute("data-has-image", "0");
+      if (urlInput) urlInput.focus();
+    });
+  });
+
   document.querySelectorAll("[data-image-file]").forEach(function (fileInput) {
     fileInput.addEventListener("change", function () {
       var file = fileInput.files && fileInput.files[0];
@@ -687,12 +731,15 @@
         if (res.ok && res.data && res.data.url) {
           if (urlInput) urlInput.value = res.data.url;
           if (preview) {
-            preview.innerHTML = "";
+            // 只换 <img>，不清空容器：容器里还有右上角的删除按钮
+            var oldImg = preview.querySelector("img");
+            if (oldImg) oldImg.remove();
             var img = document.createElement("img");
             img.src = res.data.url;
             img.alt = "";
             preview.appendChild(img);
           }
+          if (field) field.setAttribute("data-has-image", "1");
         } else {
           window.alert("上传失败：" + ((res.data && res.data.error) || "未知错误"));
         }

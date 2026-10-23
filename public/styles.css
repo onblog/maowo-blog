@@ -2546,9 +2546,18 @@ button {
 }
 .image-field__preview {
   margin-top: 8px;
+  position: relative;
+  /* 收缩到图片宽度，删除按钮才会贴在缩略图右上角而不是整行最右侧 */
+  width: fit-content;
+  line-height: 0;
 }
 .image-field--inline .image-field__row {
   align-items: center;
+}
+.image-field__thumb-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 .image-field__thumb {
   width: 38px;
@@ -2576,6 +2585,44 @@ button {
   width: 76px;
   height: 76px;
   border-radius: 50%;
+}
+
+/* 图片缩略图右上角的移除按钮 */
+.image-field__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--canvas);
+  cursor: pointer;
+  /* 缩略图可能是任意照片：一道中性描边保证按钮在浅色/深色图上都能分离出来 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.24), 0 0 0 1.5px rgba(127, 127, 127, 0.4);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.image-field__remove:hover {
+  background: var(--danger);
+  transform: scale(1.08);
+}
+.image-field__remove:active {
+  transform: scale(0.96);
+}
+/* 头像那种 38px 的小圆形缩略图：按钮跟着缩小，否则会盖住半张脸 */
+.image-field--inline .image-field__remove {
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+}
+/* 没有图时收起按钮 —— 用属性选择器而不是 hidden，避免被 display:grid 覆盖掉 */
+.image-field[data-has-image="0"] .image-field__remove {
+  display: none;
 }
 
 /* 友情链接编辑器 */
