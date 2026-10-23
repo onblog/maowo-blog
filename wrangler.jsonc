@@ -50,7 +50,9 @@
     // 站点语言：部署时定死，运行时不做切换（zh 默认 / en）。
     "SITE_LOCALE": "zh",
     // SITE_URL 决定 OAuth 的 redirect_uri，必须与 GitHub OAuth App 注册的回调地址一致。
-    "SITE_URL": "http://127.0.0.1:8789",
+    // 这里放生产值：部署时若写本地地址，robots.txt / sitemap.xml / feed.xml
+    // 里的绝对 URL 都会指向 127.0.0.1。本地开发用 .dev.vars 覆盖成 localhost。
+    "SITE_URL": "https://blog.wordtk.com",
     // GitHub OAuth 的 CLIENT_ID 与 SECRET 都走 secret（本地 .dev.vars）。
     // ⚠️ 不要在这里写空字符串：vars 会覆盖同名 secret。
     // 后台账号密码只走 secret（本地 .dev.vars / 生产 `wrangler secret put`）。
