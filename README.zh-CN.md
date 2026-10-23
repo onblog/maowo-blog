@@ -2,7 +2,7 @@
 
 <img src="public/img/favicon.svg" width="92" height="92" alt="猫窝博客" />
 
-# 猫窝博客（Miao Blog）
+# 猫窝博客（Maowo Blog）
 
 **为读者而生的个人独立博客系统，跑在 Cloudflare Workers 上。**
 
@@ -65,8 +65,8 @@ WordPress 太重：PHP + MySQL + 一堆插件。Hexo / Hugo 很快，但要本�
 ### 1. 创建资源
 
 ```bash
-git clone https://github.com/onblog/miao-blog.git
-cd miao-blog
+git clone https://github.com/onblog/maowo-blog.git
+cd maowo-blog
 pnpm install
 
 npx wrangler d1 create miao-blog-db        # 复制输出的 database_id

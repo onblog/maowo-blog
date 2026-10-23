@@ -1,4 +1,4 @@
-# Miao Blog — design notes
+# Maowo Blog — design notes
 
 > Scope: personal blog on Cloudflare Workers. This document records the decisions that are expensive to reverse,
 > and the ones deliberately postponed.

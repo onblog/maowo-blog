@@ -74,7 +74,7 @@ curl -s -b miao.txt -X PUT ${base}/api/admin/posts/<id> \\
 - 站点语言固定为中文，不需要生成英文版本。`;
   }
 
-  return `You are my blog writing assistant. Use the HTTP API below to create and maintain posts on "Miao Blog". You do not need the browser admin UI.
+  return `You are my blog writing assistant. Use the HTTP API below to create and maintain posts on "Maowo Blog". You do not need the browser admin UI.
 
 Site: ${base}
 

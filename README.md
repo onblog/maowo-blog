@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/img/favicon.svg" width="92" height="92" alt="Miao Blog" />
+<img src="public/img/favicon.svg" width="92" height="92" alt="Maowo Blog" />
 
-# Miao Blog
+# Maowo Blog
 
 **A personal, independent blog for Cloudflare Workers.**
 猫窝博客 —— 为读者而生的个人独立博客系统。
@@ -20,16 +20,16 @@
 
 </div>
 
-![Miao Blog home page](docs/images/home.png)
+![Maowo Blog home page](docs/images/home.png)
 
 ---
 
 ## Why another blog engine?
 
 WordPress is heavy. Hexo and Hugo are fast but need a build step, a local toolchain and a deploy pipeline. Ghost is nice but
-it is a product, not a file you own. Miao Blog sits in between:
+it is a product, not a file you own. Maowo Blog sits in between:
 
-| | WordPress | Hexo / Hugo | **Miao Blog** |
+| | WordPress | Hexo / Hugo | **Maowo Blog** |
 | --- | --- | --- | --- |
 | Write in | browser (Gutenberg) | local editor + build | browser, Markdown |
 | Publish | PHP + MySQL | static build + deploy | **one click, no build** |
@@ -68,8 +68,8 @@ That is the feature.
 ### 1. Create the resources
 
 ```bash
-git clone https://github.com/onblog/miao-blog.git
-cd miao-blog
+git clone https://github.com/onblog/maowo-blog.git
+cd maowo-blog
 pnpm install
 
 npx wrangler d1 create miao-blog-db        # copy the database_id

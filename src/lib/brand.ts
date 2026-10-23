@@ -8,14 +8,14 @@ import type { Locale } from "../types";
  * 静态资源（styles.css / app.js / admin.js / export-zip.js）的缓存版本号。
  * 改了这些文件就把数字 +1 —— 浏览器与边缘才会立刻换新，否则可能继续命中旧缓存。
  */
-export const ASSET_VERSION = "17";
+export const ASSET_VERSION = "18";
 
 export const BRAND = {
-  repo: "onblog/miao-blog",
-  repoUrl: "https://github.com/onblog/miao-blog",
+  repo: "onblog/maowo-blog",
+  repoUrl: "https://github.com/onblog/maowo-blog",
   license: "AGPL-3.0-only",
   defaultNameZh: "猫窝博客",
-  defaultNameEn: "Miao Blog",
+  defaultNameEn: "Maowo Blog",
   defaultUrl: "https://blog.wordtk.com",
 } as const;
 

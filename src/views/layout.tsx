@@ -191,7 +191,7 @@ export function Layout(props: LayoutProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{fullTitle}</title>
         {desc ? <meta name="description" content={desc} /> : null}
-        <meta name="generator" content="miao-blog" />
+        <meta name="generator" content="maowo-blog" />
         <meta name="color-scheme" content="light dark" />
         <meta name="theme-color" content={colorMode === "dark" ? "#17161a" : "#fdfbf3"} />
         <meta property="og:title" content={fullTitle} />
@@ -274,8 +274,8 @@ export function Layout(props: LayoutProps) {
               © {new Date().getUTCFullYear()} {site.owner_name || name} · {t(locale, "footer.reader_love")}
             </p>
             <p class="site-footer__meta">
-              <a href="https://github.com/onblog/miao-blog" target="_blank" rel="noopener noreferrer">
-                @MIAO-BLOG
+              <a href="https://github.com/onblog/maowo-blog" target="_blank" rel="noopener noreferrer">
+                @MAOWO-BLOG
               </a>
               {admin ? (
                 <>

@@ -95,7 +95,7 @@ export const messages = {
     "notfound.desc": "页面走丢了，回首页看看吧。",
     "notfound.home": "回首页",
 
-    "footer.powered": "由 miao-blog 驱动",
+    "footer.powered": "由 maowo-blog 驱动",
     "footer.reader_love": "为读者而做",
 
     "admin.login.title": "猫窝后台",
@@ -291,10 +291,10 @@ export const messages = {
     "notfound.desc": "This page wandered off. Let's go home.",
     "notfound.home": "Back home",
 
-    "footer.powered": "Powered by miao-blog",
+    "footer.powered": "Powered by maowo-blog",
     "footer.reader_love": "Made for readers",
 
-    "admin.login.title": "Miao Blog Admin",
+    "admin.login.title": "Maowo Blog Admin",
     "admin.login.hint": "Credentials come from deployment environment variables",
     "admin.login.user": "Username",
     "admin.login.pass": "Password",

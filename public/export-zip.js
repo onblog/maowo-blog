@@ -258,10 +258,10 @@
       });
 
       var readme = [
-        "猫窝博客（miao-blog）全站导出",
+        "猫窝博客（maowo-blog）全站导出",
         "========================================",
         "",
-        "站点：" + (data.site ? data.site.name : "miao-blog"),
+        "站点：" + (data.site ? data.site.name : "maowo-blog"),
         "导出时间：" + new Date().toISOString(),
         "文章：" + posts.length + " 篇",
         "图片：" + (total - failed) + " 张" + (failed ? "（失败 " + failed + " 张）" : ""),
@@ -288,7 +288,7 @@
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url;
-      a.download = "miao-blog-export-" + new Date().toISOString().slice(0, 10) + ".zip";
+      a.download = "maowo-blog-export-" + new Date().toISOString().slice(0, 10) + ".zip";
       document.body.appendChild(a);
       a.click();
       a.remove();

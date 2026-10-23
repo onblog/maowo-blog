@@ -1,5 +1,5 @@
 -- ============================================================================
--- miao-blog 初始 schema
+-- maowo-blog 初始 schema
 -- 定位：单作者博客。作者身份来自环境变量（/admin 登录），不建 users 表；
 --       评论者身份来自 GitHub OAuth，冗余存在 comments 行上（不建评论者账号体系）。
 -- 时间统一 Unix 毫秒 INTEGER；主键用 ULID 文本（时间有序）。
@@ -33,7 +33,7 @@ CREATE TABLE site (
 );
 
 INSERT INTO site (id, name_zh, name_en, owner_name, created_at, updated_at)
-VALUES (1, '猫窝博客', 'Miao Blog', 'Miao', CAST(strftime('%s', 'now') AS INTEGER) * 1000, CAST(strftime('%s', 'now') AS INTEGER) * 1000);
+VALUES (1, '猫窝博客', 'Maowo Blog', 'Miao', CAST(strftime('%s', 'now') AS INTEGER) * 1000, CAST(strftime('%s', 'now') AS INTEGER) * 1000);
 
 CREATE TABLE posts (
   id TEXT PRIMARY KEY,

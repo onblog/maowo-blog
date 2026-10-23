@@ -96,7 +96,7 @@ export async function fetchGithubProfile(token: string): Promise<GithubProfile> 
       headers: {
         accept: "application/vnd.github+json",
         authorization: `Bearer ${token}`,
-        "user-agent": "miao-blog",
+        "user-agent": "maowo-blog",
         "x-github-api-version": "2022-11-28",
       },
     }),

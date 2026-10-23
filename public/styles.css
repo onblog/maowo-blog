@@ -1,5 +1,5 @@
 /* ============================================================================
-   猫窝博客（miao-blog）设计系统
+   猫窝博客（maowo-blog）设计系统
    ----------------------------------------------------------------------------
    方向：可爱为壳，阅读为核。
    - 「可爱」靠形状与动效表达（大圆角、2px 描边、实色偏移阴影、猫 mascot），
@@ -1956,7 +1956,7 @@ button {
 .site-footer a:hover {
   color: var(--accent-deep);
 }
-/* 系统来源统一大写：@MIAO-BLOG */
+/* 系统来源统一大写：@MAOWO-BLOG */
 .site-footer__meta a:first-child {
   text-transform: uppercase;
   letter-spacing: 0.04em;
