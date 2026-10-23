@@ -46,7 +46,10 @@ export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
   if (adminSession?.kind === "admin" && adminSession.user_json) {
     try {
-      c.set("admin", JSON.parse(adminSession.user_json));
+      const parsed = JSON.parse(adminSession.user_json) as { username?: string; mustChange?: boolean };
+      // 兜底：缺 mustChange 的脏会话按 false 处理。迁移 0007 已经清空旧后台会话，
+      // 正常情况下不会走到这里；留着是为了让一条坏数据不至于把人永久锁在改密页。
+      c.set("admin", { username: parsed.username ?? "", mustChange: parsed.mustChange === true });
     } catch {
       c.set("admin", null);
     }

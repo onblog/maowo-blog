@@ -6,6 +6,7 @@ import { listAll } from "../services/comments";
 import { buildAgentPrompt } from "../lib/agent-prompt";
 import { getSeriesById, listSeriesNames } from "../services/series";
 import {
+  AdminAccountPage,
   AdminCommentsPage,
   AdminEditorPage,
   AdminMigratePage,
@@ -32,9 +33,18 @@ function base(c: Context<AppEnv>) {
 }
 
 function guard(c: Context<AppEnv>): Response | null {
-  if (c.get("admin")) return null;
-  const next = new URL(c.req.url).pathname;
-  return c.redirect(`/admin/login?next=${encodeURIComponent(next)}`, 302);
+  const admin = c.get("admin");
+  if (!admin) {
+    const next = new URL(c.req.url).pathname;
+    return c.redirect(`/admin/login?next=${encodeURIComponent(next)}`, 302);
+  }
+  // 出厂默认口令期间把作者关进改密页：其他后台页面一概不放行。
+  // 页面守卫与接口守卫（requireAdminApi）必须成对，少一个就只是"藏起来的页面"。
+  const path = new URL(c.req.url).pathname;
+  if (admin.mustChange && path !== "/admin/account") {
+    return c.redirect(`/admin/account?next=${encodeURIComponent(path)}`, 302);
+  }
+  return null;
 }
 
 adminPages.get("/login", async (c) => {
@@ -97,6 +107,12 @@ adminPages.get("/settings", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
   return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} />);
+});
+
+adminPages.get("/account", async (c) => {
+  const blocked = guard(c);
+  if (blocked) return blocked;
+  return c.html(<AdminAccountPage {...base(c)} admin={c.get("admin")!} />);
 });
 
 adminPages.get("/migrate", async (c) => {

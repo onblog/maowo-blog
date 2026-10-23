@@ -16,6 +16,23 @@ export type ReaderUser = {
 
 export type AdminUser = {
   username: string;
+  /**
+   * true = 仍是出厂默认口令（admin/admin）。
+   *
+   * 由会话里记着、登录时写进去的：服务端据此把作者关进 /admin/account，
+   * 其他后台接口与页面一律拒绝。改完密码后重新签发的会话里它是 false。
+   */
+  mustChange: boolean;
+};
+
+/** 后台账号记录（单行表 `admin_credentials`，见 migrations/0007）。 */
+export type AdminAccount = {
+  username: string;
+  password_hash: string;
+  salt: string;
+  iterations: number;
+  must_change: number;
+  updated_at: number;
 };
 
 /** 挂在 c 上的请求级状态 */

@@ -1,10 +1,20 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { ADMIN_COOKIE, ADMIN_TTL_MS, readCookie } from "../lib/cookies";
-import { safeUrl, timingSafeEqual } from "../lib/html";
+import { safeUrl } from "../lib/html";
+import { t } from "../lib/i18n";
+import {
+  MAX_PASSWORD_LENGTH,
+  MAX_USERNAME_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  MIN_USERNAME_LENGTH,
+  validatePassword,
+  validateUsername,
+} from "../lib/password";
 import { createSession, deleteSession, pruneExpiredSessions } from "../lib/session";
 import { clearAdminCookie, setAdminCookie } from "../lib/session-cookie";
 import { requireAdminApi } from "../middleware/guards";
+import { deleteAdminSessions, updateAdminCredentials, verifyAdminPassword } from "../services/admin";
 import { COMMENT_COOLDOWN_SECONDS, DAILY_COMMENT_LIMIT, countToday, createComment, lastCommentAt, remove, setStatus } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
 import { renderMarkdown } from "../lib/markdown";
@@ -91,6 +101,24 @@ api.post("/comments", async (c) => {
   return c.json({ ok: true, comment }, 201);
 });
 
+// ── 改密限流：这个接口同时是「当前密码是否正确」的判定器 —— 不限流就能拿来试密码。
+//    与登录一样用 isolate 内存计数，冷启动会重置；真正的兜底交给强口令 + Cloudflare Access（可选）。
+const accountAttempts = new Map<string, { count: number; resetAt: number }>();
+const ACCOUNT_MAX_ATTEMPTS = 5;
+const ACCOUNT_WINDOW_MS = 60 * 1000;
+
+function throttleAccount(ip: string): boolean {
+  const now = Date.now();
+  const entry = accountAttempts.get(ip);
+  if (!entry || entry.resetAt < now) {
+    accountAttempts.set(ip, { count: 1, resetAt: now + ACCOUNT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= ACCOUNT_MAX_ATTEMPTS) return false;
+  entry.count += 1;
+  return true;
+}
+
 // ── 后台：会话 ──────────────────────────────────────────────────────────────
 
 api.post("/admin/login", async (c) => {
@@ -102,25 +130,20 @@ api.post("/admin/login", async (c) => {
   }
 
   const body = await c.req.json<{ username?: string; password?: string }>();
-  const expectedUser = c.env.ADMIN_USER ?? "";
-  const expectedPass = c.env.ADMIN_PASS ?? "";
-
-  if (!expectedUser || !expectedPass) {
-    return c.json({ error: "admin_not_configured", message: "请在部署时设置 ADMIN_USER / ADMIN_PASS" }, 500);
-  }
-
-  const userOk = timingSafeEqual(body.username ?? "", expectedUser);
-  const passOk = timingSafeEqual(body.password ?? "", expectedPass);
-  if (!userOk || !passOk) {
+  const account = await verifyAdminPassword(c.env, body.username ?? "", body.password ?? "");
+  if (!account) {
     recordFailure(ip);
+    // 不区分「账号不存在」与「密码错」，防账号枚举。
     return c.json({ error: "invalid_credentials" }, 401);
   }
 
   loginAttempts.delete(ip);
   await pruneExpiredSessions(c.env);
-  const token = await createSession(c.env, "admin", { username: expectedUser }, ADMIN_TTL_MS);
+  const mustChange = account.must_change === 1;
+  const token = await createSession(c.env, "admin", { username: account.username, mustChange }, ADMIN_TTL_MS);
   setAdminCookie(c, token);
-  return c.json({ ok: true });
+  // mustChange 只是给前端的**提前提示**；真正的强制在页面守卫与 requireAdminApi。
+  return c.json({ ok: true, username: account.username, mustChange });
 });
 
 api.post("/admin/logout", async (c) => {
@@ -128,6 +151,65 @@ api.post("/admin/logout", async (c) => {
   await deleteSession(c.env, token);
   clearAdminCookie(c);
   return c.json({ ok: true });
+});
+
+// ── 后台：账号与密码 ────────────────────────────────────────────────────────
+
+/**
+ * 修改后台账号与密码。
+ *
+ * 刻意**不挂 requireAdminApi**：出厂默认口令期间，那个守卫会把这里也一起 403 掉，
+ * 作者就永远出不去。这里改为自己判断登录态（只放行"已登录"）。
+ *
+ * 改完之后 `deleteAdminSessions` + 重新签发：作者本人不被踢下线，其他设备上的后台
+ * 会话立刻失效。
+ */
+api.post("/admin/account", async (c) => {
+  const admin = c.get("admin");
+  if (!admin) return c.json({ error: "unauthorized" }, 401);
+
+  const locale = c.get("locale");
+  const ip = clientIp(c);
+  if (!throttleAccount(ip)) {
+    return c.json({ error: "too_many_requests", message: t(locale, "admin.account.error.too_many") }, 429);
+  }
+
+  const body = await c.req.json<{ currentPassword?: string; username?: string; password?: string }>();
+
+  // 改密必须验一次当前密码：会话 Cookie 只能证明"这个浏览器登录过"，
+  // 证明不了"现在操作的是一个知道密码的人"（别人趁你没锁屏也能改）。
+  const account = await verifyAdminPassword(c.env, admin.username, body.currentPassword ?? "");
+  if (!account) {
+    return c.json({ error: "invalid_current_password", message: t(locale, "admin.account.error.current") }, 400);
+  }
+
+  const nextUsername = (body.username ?? "").trim() || account.username;
+  const usernameError = validateUsername(nextUsername);
+  if (usernameError) {
+    return c.json(
+      { error: "invalid_username", message: t(locale, usernameError, { min: MIN_USERNAME_LENGTH, max: MAX_USERNAME_LENGTH }) },
+      400,
+    );
+  }
+
+  const password = body.password ?? "";
+  const passwordError = validatePassword(password, nextUsername);
+  if (passwordError) {
+    return c.json(
+      { error: "invalid_password", message: t(locale, passwordError, { min: MIN_PASSWORD_LENGTH, max: MAX_PASSWORD_LENGTH }) },
+      400,
+    );
+  }
+  // 再挡一次"新密码 = 旧密码"：否则强制改密可以原地交作业，默认口令照样生效。
+  if (await verifyAdminPassword(c.env, account.username, password)) {
+    return c.json({ error: "same_password", message: t(locale, "admin.account.error.same_password") }, 400);
+  }
+
+  const updated = await updateAdminCredentials(c.env, { username: nextUsername, password });
+  await deleteAdminSessions(c.env);
+  const token = await createSession(c.env, "admin", { username: updated.username, mustChange: false }, ADMIN_TTL_MS);
+  setAdminCookie(c, token);
+  return c.json({ ok: true, username: updated.username, mustChange: false });
 });
 
 // ── 后台：文章 ──────────────────────────────────────────────────────────────

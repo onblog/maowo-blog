@@ -56,7 +56,10 @@ flowchart LR
 - 会话 = 32 字节随机数进 httpOnly Cookie，库里只存它的 SHA-256。
 - 同一个 GitHub 账号连续评论冷却 10 秒。
 
-**作者** —— `ADMIN_USER` / `ADMIN_PASS` 环境变量，常量时间比较；同 IP 5 次失败锁 15 分钟（isolate 内存计数）。
+**作者** —— 账号密码存在 D1 的单行表 `admin_credentials`（迁移 `0007`），PBKDF2-SHA256（10,000 次迭代、
+每条记录独立随机盐）存储；首次读取时播种为 `admin` / `admin`，登录后由服务端强制改密：其他后台页面
+302 到 `/admin/account`，其他后台接口 403 `password_change_required`。改完后删除全部后台会话再给当前
+浏览器换发一张，其他设备立刻掉线。登录同 IP 5 次失败锁 15 分钟（isolate 内存计数），改密接口每分钟 5 次。
 想要 SSO 的人可以在前面叠一层 Cloudflare Access。
 
 ## 5. 语言

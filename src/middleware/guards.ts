@@ -45,8 +45,16 @@ export const originGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
   await next();
 };
 
-/** 后台接口守卫：没有 admin 会话一律 401（页面跳登录页另在路由内处理） */
+/**
+ * 后台接口守卫：没有 admin 会话一律 401（页面跳登录页另在路由内处理）。
+ *
+ * 出厂默认口令（admin/admin）期间再拦一层 403：默认口令写在公开仓库里，
+ * 谁都知道，所以"先改密"必须由服务端强制。`/api/admin/account` 刻意不挂这个守卫
+ * —— 它是强制流程的唯一出口，由路由自己判断登录态。
+ */
 export const requireAdminApi: MiddlewareHandler<AppEnv> = async (c, next) => {
-  if (!c.get("admin")) return c.json({ error: "unauthorized" }, 401);
+  const admin = c.get("admin");
+  if (!admin) return c.json({ error: "unauthorized" }, 401);
+  if (admin.mustChange) return c.json({ error: "password_change_required" }, 403);
   await next();
 };

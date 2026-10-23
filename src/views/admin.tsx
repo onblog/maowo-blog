@@ -11,7 +11,7 @@ type Shell = {
   locale: Locale;
   colorMode: ColorMode;
   admin: AdminUser | null;
-  active: "posts" | "comments" | "settings" | "migrate" | "login";
+  active: "posts" | "comments" | "settings" | "account" | "migrate" | "login";
   children: Child;
 };
 
@@ -23,6 +23,7 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
     { key: "comments", href: "/admin/comments", label: "admin.tab.comments" },
     { key: "settings", href: "/admin/settings", label: "admin.tab.settings" },
     { key: "migrate", href: "/admin/migrate", label: "admin.tab.migrate" },
+    { key: "account", href: "/admin/account", label: "admin.tab.account" },
   ];
 
   return (
@@ -714,6 +715,70 @@ export function AdminMigratePage({
       <button class="btn" type="button" data-export-zip>
         {t(locale, "admin.migrate.export")}
       </button>
+    </AdminShell>
+  );
+}
+
+/**
+ * 账号与安全：后台账号密码存在 D1（迁移 0007），这里就是唯一的修改入口。
+ *
+ * `admin.mustChange` 为 true 时页面顶部挂一条警示：出厂默认口令 admin/admin 写在
+ * 公开仓库里，服务端此时已经拦掉了其他所有后台页面与接口，所以这里不是"提示"而是
+ * 唯一的出路。提交逻辑在 public/admin.js 的 `[data-account-form]`。
+ */
+export function AdminAccountPage({
+  site,
+  locale,
+  colorMode,
+  admin,
+}: {
+  site: SiteRow;
+  locale: Locale;
+  colorMode: ColorMode;
+  admin: AdminUser;
+}) {
+  return (
+    <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="account">
+      <h1 class="admin-title">{t(locale, "admin.account.title")}</h1>
+
+      {admin.mustChange ? (
+        <div class="admin-notice admin-notice--warn" role="alert">
+          <strong class="admin-notice__title">{t(locale, "admin.account.must_title")}</strong>
+          <p class="admin-notice__body">{t(locale, "admin.account.must_hint")}</p>
+        </div>
+      ) : (
+        <p class="muted admin-migrate__hint">{t(locale, "admin.account.hint")}</p>
+      )}
+
+      <form class="admin-form" data-account-form>
+        <div class="admin-form__grid">
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.account.current")}</span>
+            <input class="field__input" name="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.account.username")}</span>
+            <input class="field__input" name="username" value={admin.username} autocomplete="username" required />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.account.password")}</span>
+            <input class="field__input" name="password" type="password" autocomplete="new-password" minlength={8} required />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.account.confirm")}</span>
+            <input class="field__input" name="confirmPassword" type="password" autocomplete="new-password" minlength={8} required />
+          </label>
+        </div>
+
+        <p class="muted admin-migrate__hint">{t(locale, "admin.account.rule")}</p>
+        <p class="editor__status" data-account-status />
+
+        <div class="admin-form__actions">
+          <button class="btn btn--primary" type="submit">
+            {t(locale, "admin.account.submit")}
+          </button>
+        </div>
+      </form>
     </AdminShell>
   );
 }

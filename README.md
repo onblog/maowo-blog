@@ -87,11 +87,13 @@ npx wrangler d1 migrations apply miao-blog-db --remote
 ### 3. Set the secrets
 
 ```bash
-npx wrangler secret put ADMIN_USER          # e.g. martin
-npx wrangler secret put ADMIN_PASS          # long random string
 npx wrangler secret put GITHUB_CLIENT_ID    # for comments
 npx wrangler secret put GITHUB_CLIENT_SECRET
 ```
+
+The admin account needs **no** secrets: it lives in the D1 table `admin_credentials`
+(migration `0007`). The first request to `/admin` seeds it as `admin` / `admin`, and the server then
+forces you to change it before any other admin page or endpoint will work.
 
 Create a GitHub OAuth App at <https://github.com/settings/developers> with the callback URL
 `https://YOUR_DOMAIN/api/auth/github/callback`. GitHub allows **one** callback per app, so create a second app for local
@@ -103,7 +105,8 @@ development (`http://127.0.0.1:8789/api/auth/github/callback`).
 npx wrangler deploy --env production
 ```
 
-Then open `/admin`, sign in with the credentials from step 3, and write your first post.
+Then open `/admin`, sign in with `admin` / `admin`, change the credentials when asked, and write your
+first post.
 
 ### Configuration reference
 
@@ -111,11 +114,13 @@ Then open `/admin`, sign in with the credentials from step 3, and write your fir
 | --- | --- | --- | --- |
 | `SITE_URL` | yes | — | Absolute site URL. Derives the OAuth `redirect_uri`. |
 | `SITE_LOCALE` | no | `zh` | UI language, **fixed at deploy time**. `zh` or `en`. |
-| `ADMIN_USER` | yes | — | `/admin` username. **Secret only** — never put it in `vars` (an empty `vars` entry silently overrides the secret). |
-| `ADMIN_PASS` | yes | — | `/admin` password (secret). |
 | `GITHUB_CLIENT_ID` | for comments | — | Public value; safe in `vars`. |
 | `GITHUB_CLIENT_SECRET` | for comments | — | **Secret.** Never commit it. |
 | `ENV` | no | `development` | Set to `production` when deployed. |
+
+The admin username and password are stored in D1 (`admin_credentials`, single row) and changed under
+`/admin/account` — not through environment variables. The default `admin` / `admin` must be replaced
+on first login.
 
 Tune the site in `/admin/settings`: name, tagline, author bio, avatar, links, **colour mode (`auto` / `light` / `dark`)**, comments on/off.
 

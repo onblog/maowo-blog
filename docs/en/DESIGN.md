@@ -59,8 +59,13 @@ no `post_revisions` (a blog is not a wiki), no `ai_checks` (AI is optional).
 - Session = 32 random bytes in an httpOnly cookie; the DB stores only its SHA-256.
 - Cooldown: 10 seconds between comments per GitHub account.
 
-**Author** — `ADMIN_USER` / `ADMIN_PASS` environment variables, compared in constant time, 5 failed attempts per IP
-locks for 15 minutes (in-isolate counter). Cloudflare Access can be layered on top for users who want SSO.
+**Author** — credentials live in the single-row D1 table `admin_credentials` (migration `0007`), stored
+as PBKDF2-SHA256 (10,000 iterations, per-record random salt). The first read seeds `admin` / `admin`,
+and the server then forces a change: every other admin page 302s to `/admin/account`, every other
+admin endpoint returns 403 `password_change_required`. On save all admin sessions are deleted and a
+fresh one is issued to the current browser, so other devices drop immediately. Login locks for 15
+minutes after 5 failed attempts per IP (in-isolate counter); the credential-change endpoint allows 5
+per minute. Cloudflare Access can be layered on top for users who want SSO.
 
 ## 5. Language
 

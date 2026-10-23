@@ -37,7 +37,7 @@ export function newToken(): string {
 export async function createSession(
   env: Env,
   kind: SessionKind,
-  user: ReaderUser | { username: string } | null,
+  user: ReaderUser | { username: string; mustChange?: boolean } | null,
   ttlMs: number,
 ): Promise<string> {
   const token = newToken();

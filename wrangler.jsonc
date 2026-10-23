@@ -59,8 +59,8 @@
     "SITE_URL": "http://127.0.0.1:8789",
     // GitHub OAuth 的 CLIENT_ID 与 SECRET 都走 secret（本地 .dev.vars）。
     // ⚠️ 不要在这里写空字符串：vars 会覆盖同名 secret。
-    // 后台账号密码只走 secret（本地 .dev.vars / 生产 `wrangler secret put`）。
-    // ⚠️ 不要在这里写 ADMIN_USER —— vars 里的空字符串会覆盖同名 secret。
+    // 后台账号密码也不在这里：它们存在 D1 的 `admin_credentials` 表里（迁移 0007），
+    // 首次读取时播种为 admin/admin，登录后强制改密；改账号密码走后台 /admin/account。
   },
 
   // 域名绑定不在仓库里声明：统一在 Cloudflare Dashboard 的

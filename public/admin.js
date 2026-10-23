@@ -272,6 +272,11 @@
         body: JSON.stringify({ username: username, password: password })
       }).then(function (result) {
         if (result.ok) {
+          // 出厂默认口令：不进 next，直接去改密页（服务端守卫也会这么跳）。
+          if (result.data && result.data.mustChange) {
+            window.location.href = "/admin/account";
+            return;
+          }
           var params = new URLSearchParams(window.location.search);
           window.location.href = params.get("next") || "/admin";
           return;
@@ -290,6 +295,52 @@
     logoutBtn.addEventListener("click", function () {
       api("/api/admin/logout", { method: "POST" }).then(function () {
         window.location.href = "/admin/login";
+      });
+    });
+  }
+
+  // ── 后台：账号与安全 ────────────────────────────────────────────────
+  // 服务端已校验账号 / 密码规则；这里只补一个「两次输入是否一致」，
+  // 免得把不一致的两次输入发上去、再让用户等一次往返。
+  var accountForm = document.querySelector("[data-account-form]");
+  if (accountForm) {
+    accountForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var statusEl = document.querySelector("[data-account-status]");
+      var read = function (name) {
+        var el = accountForm.querySelector('input[name="' + name + '"]');
+        return el ? el.value : "";
+      };
+      var setStatus = function (text, ok) {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+        statusEl.className = "editor__status" + (ok ? " editor__status--ok" : " editor__status--error");
+      };
+
+      var password = read("password");
+      if (password !== read("confirmPassword")) {
+        setStatus("两次输入的新密码不一致", false);
+        return;
+      }
+
+      setStatus("保存中…", true);
+      api("/api/admin/account", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: read("currentPassword"),
+          username: read("username").trim(),
+          password: password
+        })
+      }).then(function (result) {
+        if (!result.ok) {
+          setStatus((result.data && result.data.message) || "保存失败", false);
+          return;
+        }
+        // 服务端已换发新会话；回到被守卫拦下之前想去的页面。
+        var params = new URLSearchParams(window.location.search);
+        var next = params.get("next");
+        window.location.href = next && next.indexOf("/admin") === 0 ? next : "/admin";
       });
     });
   }

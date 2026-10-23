@@ -6,6 +6,7 @@
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
-# 后台 /admin 的登录账号。密码请用足够长的随机串。
-ADMIN_USER=admin
-ADMIN_PASS=change-me-please
+# 后台 /admin 的账号密码**不用在这里配置**：它们存在 D1 的 admin_credentials 表里，
+# 首次打开后台时自动播种为 admin / admin，登录后被强制要求改密。
+# 本地改了密码想恢复出厂状态：删掉 .wrangler/state 下的本地 D1 再跑一次
+# `pnpm db:migrate:local` 即可。

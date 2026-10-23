@@ -2059,6 +2059,30 @@ button {
   font-weight: 900;
   letter-spacing: -0.01em;
 }
+
+/* 警示条：目前只用于「仍是出厂默认口令，必须改密」。
+   用 accent 的暖色变体而不是纯红 —— 它不是报错，是一个必须先处理的状态。 */
+.admin-notice {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, #d93b3b 32%, var(--border));
+  border-left-width: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #d93b3b 7%, var(--surface));
+  max-width: 860px;
+}
+.admin-notice__title {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: color-mix(in srgb, #d93b3b 72%, var(--text));
+}
+.admin-notice__body {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+}
 .admin-section-head {
   display: flex;
   align-items: center;

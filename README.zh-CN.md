@@ -84,11 +84,12 @@ npx wrangler d1 migrations apply miao-blog-db --remote
 ### 3. 配置密钥
 
 ```bash
-npx wrangler secret put ADMIN_USER          # 例如 martin
-npx wrangler secret put ADMIN_PASS          # 足够长的随机串
 npx wrangler secret put GITHUB_CLIENT_ID    # 评论需要
 npx wrangler secret put GITHUB_CLIENT_SECRET
 ```
+
+后台账号**不用配密钥**：它存在 D1 的 `admin_credentials` 表里（迁移 `0007`）。首次打开 `/admin`
+时自动播种为 `admin` / `admin`，登录后服务端会强制你先改掉它，其他后台页面与接口才会放行。
 
 在 <https://github.com/settings/developers> 新建 OAuth App，回调地址填
 `https://你的域名/api/auth/github/callback`。GitHub 每个 App 只允许一个回调地址，所以本地开发要另建一个
@@ -100,7 +101,7 @@ npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler deploy --env production
 ```
 
-打开 `/admin`，用第 3 步的账号登录，就可以写第一篇了。
+打开 `/admin`，用 `admin` / `admin` 登录，按提示改掉账号密码，就可以写第一篇了。
 
 ### 环境变量
 
@@ -108,11 +109,12 @@ npx wrangler deploy --env production
 | --- | --- | --- | --- |
 | `SITE_URL` | 是 | — | 站点绝对地址，决定 OAuth 的 `redirect_uri` |
 | `SITE_LOCALE` | 否 | `zh` | **部署时定死**的界面语言：`zh` 或 `en` |
-| `ADMIN_USER` | 是 | — | `/admin` 账号。**只能走 secret**——写进 `vars` 的空值会静默覆盖同名 secret |
-| `ADMIN_PASS` | 是 | — | `/admin` 密码（secret） |
 | `GITHUB_CLIENT_ID` | 评论需要 | — | 公开值，可放 `vars` |
 | `GITHUB_CLIENT_SECRET` | 评论需要 | — | **secret**，绝不进仓库 |
 | `ENV` | 否 | `development` | 生产环境设为 `production` |
+
+后台账号密码存在 D1（`admin_credentials` 单行表），在 `/admin/account` 页修改，不再走环境变量。
+默认的 `admin` / `admin` 第一次登录必须换掉。
 
 站名、签名、头像、友情链接、**颜色模式（`auto` / `light` / `dark`）**、评论开关，都在 `/admin/settings` 里改。
 
