@@ -141,6 +141,46 @@ export function AdminPostsPage({
         </a>
       </div>
 
+      {posts.length > 0 ? (
+        <div class="admin-filters" data-post-filters>
+          <div class="filter-select" data-filter-select data-filter-status>
+            <button class="filter-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span data-filter-label>{t(locale, "admin.filter.all_status")}</span>
+              <svg class="filter-select__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <ul class="filter-select__menu" role="listbox" hidden>
+              <li class="filter-select__option filter-select__option--active" role="option" data-value="">
+                {t(locale, "admin.filter.all_status")}
+              </li>
+              <li class="filter-select__option" role="option" data-value="published">
+                {t(locale, "admin.dashboard.published")}
+              </li>
+              <li class="filter-select__option" role="option" data-value="draft">
+                {t(locale, "admin.dashboard.draft")}
+              </li>
+            </ul>
+          </div>
+
+          <div class="filter-select" data-filter-select data-filter-year>
+            <button class="filter-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span data-filter-label>{t(locale, "admin.filter.all_years")}</span>
+              <svg class="filter-select__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <ul class="filter-select__menu" role="listbox" hidden>
+              <li class="filter-select__option filter-select__option--active" role="option" data-value="">
+                {t(locale, "admin.filter.all_years")}
+              </li>
+            </ul>
+          </div>
+
+          <span class="admin-filter__count" data-filter-count data-template={t(locale, "admin.filter.count")} />
+        </div>
+      ) : null}
+
       {posts.length === 0 ? (
         <p class="muted">{t(locale, "admin.dashboard.empty")}</p>
       ) : (
@@ -148,7 +188,12 @@ export function AdminPostsPage({
           {posts.map((post) => {
             const tag = post.status === "published" ? t(locale, "admin.dashboard.published") : t(locale, "admin.dashboard.draft");
             return (
-              <li class="admin-post">
+              <li
+                class="admin-post"
+                data-post-row
+                data-status={post.status}
+                data-year={String(new Date(post.published_at ?? post.created_at).getUTCFullYear())}
+              >
                 <div class="admin-post__main">
                   <a class="admin-post__title" href={`/admin/edit/${post.id}`}>
                     {post.title}

@@ -127,6 +127,122 @@
     });
   }
 
+  // ── 文章列表筛选（纯前端：只隐藏行，不重新请求）────────────────────
+  (function () {
+    var filters = document.querySelector("[data-post-filters]");
+    if (!filters) return;
+    var rows = Array.prototype.slice.call(document.querySelectorAll("[data-post-row]"));
+    if (rows.length === 0) return;
+
+    var statusWrap = filters.querySelector("[data-filter-status]");
+    var yearWrap = filters.querySelector("[data-filter-year]");
+    var countEl = filters.querySelector("[data-filter-count]");
+    var state = { status: "", year: "" };
+
+    // 自定义下拉：按钮 + 浮层，不用原生 select（系统样式与站点不搭）
+    function setupSelect(wrap, onPick) {
+      if (!wrap) return null;
+      var trigger = wrap.querySelector(".filter-select__trigger");
+      var menu = wrap.querySelector(".filter-select__menu");
+      var label = wrap.querySelector("[data-filter-label]");
+      if (!trigger || !menu || !label) return null;
+
+      function close() {
+        menu.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+        wrap.classList.remove("filter-select--open");
+      }
+      function open() {
+        // 同一时间只开一个
+        document.querySelectorAll("[data-filter-select]").forEach(function (other) {
+          if (other !== wrap) {
+            var m = other.querySelector(".filter-select__menu");
+            var t = other.querySelector(".filter-select__trigger");
+            if (m) m.hidden = true;
+            if (t) t.setAttribute("aria-expanded", "false");
+            other.classList.remove("filter-select--open");
+          }
+        });
+        menu.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+        wrap.classList.add("filter-select--open");
+      }
+
+      trigger.addEventListener("click", function (event) {
+        event.stopPropagation();
+        menu.hidden ? open() : close();
+      });
+
+      menu.addEventListener("click", function (event) {
+        var option = event.target.closest(".filter-select__option");
+        if (!option) return;
+        event.stopPropagation();
+        var value = option.getAttribute("data-value") || "";
+        label.textContent = option.textContent;
+        Array.prototype.forEach.call(menu.querySelectorAll(".filter-select__option"), function (item) {
+          item.classList.toggle("filter-select__option--active", item === option);
+        });
+        close();
+        onPick(value);
+      });
+
+      document.addEventListener("click", close);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") close();
+      });
+
+      return { menu: menu, label: label };
+    }
+
+    function apply() {
+      var shown = 0;
+      rows.forEach(function (row) {
+        var match =
+          (!state.status || row.getAttribute("data-status") === state.status) &&
+          (!state.year || row.getAttribute("data-year") === state.year);
+        row.hidden = !match;
+        if (match) shown += 1;
+      });
+      if (countEl) {
+        var template = countEl.getAttribute("data-template") || "{shown} / {total}";
+        countEl.textContent = template.replace("{shown}", shown).replace("{total}", rows.length);
+      }
+    }
+
+    setupSelect(statusWrap, function (value) {
+      state.status = value;
+      apply();
+    });
+
+    var yearSelect = setupSelect(yearWrap, function (value) {
+      state.year = value;
+      apply();
+    });
+
+    // 年份选项从列表里收集，降序 —— 不写死，哪年有文章就出哪年
+    if (yearSelect) {
+      var years = {};
+      rows.forEach(function (row) {
+        var year = row.getAttribute("data-year");
+        if (year) years[year] = true;
+      });
+      Object.keys(years)
+        .sort(function (a, b) {
+          return Number(b) - Number(a);
+        })
+        .forEach(function (year) {
+          var option = document.createElement("li");
+          option.className = "filter-select__option";
+          option.setAttribute("role", "option");
+          option.setAttribute("data-value", year);
+          option.textContent = year;
+          yearSelect.menu.appendChild(option);
+        });
+    }
+
+    apply();
+  })();
+
   function api(path, options) {
     return fetch(path, options).then(function (res) {
       return res.json().then(
