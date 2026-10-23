@@ -100,6 +100,8 @@ export type CommentNode = CommentRow & {
  */
 export type SiteRow = {
   id: number;
+  /** 站点公开地址（来自部署时的 SITE_URL），用于拼 canonical / og:url 绝对地址 */
+  url: string;
   name: string;
   tagline: string;
   owner_name: string;

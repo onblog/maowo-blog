@@ -111,8 +111,9 @@ export function TagPage({
   reader,
   admin,
   tagName,
+  tagSlug,
   posts,
-}: BaseProps & { tagName: string; posts: PostSummary[] }) {
+}: BaseProps & { tagName: string; tagSlug: string; posts: PostSummary[] }) {
   return (
     <Layout
       site={site}
@@ -121,7 +122,7 @@ export function TagPage({
       reader={reader}
       admin={admin}
       title={`#${tagName}`}
-      canonicalPath={`/tags/${tagName}`}
+      canonicalPath={`/tags/${encodeURIComponent(tagSlug)}`}
       activeNav="tags"
     >
       <header class="page-head">

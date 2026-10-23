@@ -179,6 +179,15 @@ export function Layout(props: LayoutProps) {
   const name = siteName(site);
   const fullTitle = title ? `${title} · ${name}` : name;
   const desc = description || siteTagline(site) || site.seo_description;
+  // 绝对地址：OG 与 canonical 都要求完整 URL，相对路径社交抓取器解析不了。
+  let canonicalUrl: string | null = null;
+  if (canonicalPath) {
+    try {
+      canonicalUrl = new URL(canonicalPath, `${site.url || "http://localhost"}/`).toString();
+    } catch {
+      canonicalUrl = null;
+    }
+  }
 
   return (
     <html
@@ -198,7 +207,8 @@ export function Layout(props: LayoutProps) {
         {desc ? <meta property="og:description" content={desc} /> : null}
         <meta property="og:type" content={ogType ?? "website"} />
         <meta property="og:site_name" content={name} />
-        {canonicalPath ? <meta property="og:url" content={canonicalPath} /> : null}
+        {canonicalUrl ? <link rel="canonical" href={canonicalUrl} /> : null}
+        {canonicalUrl ? <meta property="og:url" content={canonicalUrl} /> : null}
         {ogImage ? <meta property="og:image" content={ogImage} /> : null}
         <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
         <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />

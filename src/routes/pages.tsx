@@ -68,7 +68,7 @@ pages.get("/tags/:slug", async (c) => {
   const tag = await getTagBySlug(c.env, slug);
   if (!tag) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
   const list = await listPublished(c.env, { tagSlug: slug, perPage: 100 });
-  return c.html(<TagPage {...baseProps(c)} tagName={tag.name} posts={list.items} />);
+  return c.html(<TagPage {...baseProps(c)} tagName={tag.name} tagSlug={tag.slug} posts={list.items} />);
 });
 
 pages.get("/about", async (c) => {

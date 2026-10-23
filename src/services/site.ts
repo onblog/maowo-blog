@@ -6,6 +6,7 @@ import type { SiteRow } from "../types";
  */
 const FALLBACK: SiteRow = {
   id: 1,
+  url: "",
   name: "猫窝博客",
   tagline: "一个安静写东西的地方",
   owner_name: "Miao",
@@ -24,11 +25,13 @@ const FALLBACK: SiteRow = {
 };
 
 export async function getSite(env: Env): Promise<SiteRow> {
+  // 公开地址不进数据库：它由部署时的 SITE_URL 决定，改了数据库也不该变。
+  const url = env.SITE_URL.replace(/\/$/, "");
   try {
     const row = await env.DB.prepare("SELECT * FROM site WHERE id = 1").first<SiteRow>();
-    return row ?? FALLBACK;
+    return { ...(row ?? FALLBACK), url };
   } catch {
-    return FALLBACK;
+    return { ...FALLBACK, url };
   }
 }
 

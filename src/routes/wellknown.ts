@@ -68,16 +68,46 @@ ${items}
 });
 
 wellKnown.get("/sitemap.xml", async (c) => {
-  const { results } = await c.env.DB.prepare(
-    "SELECT slug, updated_at FROM posts WHERE status = 'published' ORDER BY published_at DESC",
-  ).all<{ slug: string; updated_at: number }>();
+  // 一次并行拉齐：文章 / 标签 / 合集。
+  // 标签与合集的 lastmod 取「该集合内最新一篇文章」的更新时间，才有真实意义。
+  const [posts, tags, series] = await Promise.all([
+    c.env.DB.prepare(
+      "SELECT slug, updated_at FROM posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 50000",
+    ).all<{ slug: string; updated_at: number }>(),
+    c.env.DB.prepare(
+      `SELECT t.slug, MAX(p.updated_at) AS last_at
+         FROM tags t
+         JOIN post_tags pt ON pt.tag_id = t.id
+         JOIN posts p ON p.id = pt.post_id AND p.status = 'published'
+        GROUP BY t.id`,
+    ).all<{ slug: string; last_at: number }>(),
+    c.env.DB.prepare(
+      `SELECT s.slug, MAX(p.updated_at) AS last_at
+         FROM series s
+         JOIN posts p ON p.series_id = s.id AND p.status = 'published'
+        GROUP BY s.id`,
+    ).all<{ slug: string; last_at: number }>(),
+  ]);
 
-  const staticPaths = ["/", "/archive", "/tags", "/about"];
-  const entries = [
-    ...staticPaths.map((path) => ({ loc: `${baseUrl(c.env)}${path}`, lastmod: new Date().toISOString() })),
-    ...results.map((row) => ({
+  // 列表页的 lastmod 用「全站最新更新时间」，**不能**用请求时刻：
+  // 否则每次抓取都返回新时间，等于告诉搜索引擎这些页面天天在变，lastmod 直接失去信号价值。
+  const siteUpdatedAt = posts.results.reduce((max, row) => Math.max(max, row.updated_at), 0) || null;
+  const siteUpdatedIso = siteUpdatedAt ? new Date(siteUpdatedAt).toISOString() : null;
+
+  const staticPaths = ["/", "/series", "/archive", "/tags", "/about", "/links"];
+  const entries: Array<{ loc: string; lastmod: string | null }> = [
+    ...staticPaths.map((path) => ({ loc: `${baseUrl(c.env)}${path}`, lastmod: siteUpdatedIso })),
+    ...posts.results.map((row) => ({
       loc: `${baseUrl(c.env)}/p/${row.slug}`,
       lastmod: new Date(row.updated_at).toISOString(),
+    })),
+    ...tags.results.map((row) => ({
+      loc: `${baseUrl(c.env)}/tags/${row.slug}`,
+      lastmod: row.last_at ? new Date(row.last_at).toISOString() : null,
+    })),
+    ...series.results.map((row) => ({
+      loc: `${baseUrl(c.env)}/series/${row.slug}`,
+      lastmod: row.last_at ? new Date(row.last_at).toISOString() : null,
     })),
   ];
 
@@ -86,8 +116,9 @@ wellKnown.get("/sitemap.xml", async (c) => {
 ${entries
   .map(
     (entry) => `  <url>
-    <loc>${escapeXml(entry.loc)}</loc>
-    <lastmod>${entry.lastmod}</lastmod>
+    <loc>${escapeXml(entry.loc)}</loc>${
+      entry.lastmod ? `\n    <lastmod>${entry.lastmod}</lastmod>` : ""
+    }
   </url>`,
   )
   .join("\n")}
@@ -99,12 +130,15 @@ ${entries
 });
 
 wellKnown.get("/robots.txt", (c) => {
+  // 后台是固定账号密码登录，接口不需要被索引；正文页/列表页全部放行。
   const body = `User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /api/
 
 Sitemap: ${baseUrl(c.env)}/sitemap.xml
 `;
   c.header("content-type", "text/plain; charset=utf-8");
+  c.header("cache-control", "public, max-age=3600");
   return c.body(body);
 });
