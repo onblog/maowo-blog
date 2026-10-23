@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "miao-blog",
+  "name": "maowo-blog",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-22",
   "compatibility_flags": ["nodejs_compat"],
@@ -63,7 +63,7 @@
 
   "env": {
     "production": {
-      "name": "miao-blog",
+      "name": "maowo-blog",
       "d1_databases": [
         {
           "binding": "DB",
