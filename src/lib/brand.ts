@@ -16,7 +16,7 @@ export const BRAND = {
   license: "AGPL-3.0-only",
   defaultNameZh: "猫窝博客",
   defaultNameEn: "Maowo Blog",
-  defaultUrl: "https://blog.wordtk.com",
+  // 站点根地址不在这里定义：运行时从 env.SITE_URL 读取，部署环境自己声明。
 } as const;
 
 const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

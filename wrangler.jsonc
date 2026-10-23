@@ -50,18 +50,17 @@
     // 站点语言：部署时定死，运行时不做切换（zh 默认 / en）。
     "SITE_LOCALE": "zh",
     // SITE_URL 决定 OAuth 的 redirect_uri，必须与 GitHub OAuth App 注册的回调地址一致。
-    // 这里放生产值：部署时若写本地地址，robots.txt / sitemap.xml / feed.xml
-    // 里的绝对 URL 都会指向 127.0.0.1。本地开发用 .dev.vars 覆盖成 localhost。
-    "SITE_URL": "https://blog.wordtk.com",
+    // 这里只放**本地开发默认值**；生产值由 Cloudflare Worker 的环境变量提供
+    // （Settings → Variables and Secrets），所以仓库里不出现线上域名。
+    "SITE_URL": "http://127.0.0.1:8789",
     // GitHub OAuth 的 CLIENT_ID 与 SECRET 都走 secret（本地 .dev.vars）。
     // ⚠️ 不要在这里写空字符串：vars 会覆盖同名 secret。
     // 后台账号密码只走 secret（本地 .dev.vars / 生产 `wrangler secret put`）。
     // ⚠️ 不要在这里写 ADMIN_USER —— vars 里的空字符串会覆盖同名 secret。
   },
 
-  "routes": [
-    { "pattern": "blog.wordtk.com", "custom_domain": true }
-  ],
+  // 域名绑定不在仓库里声明：统一在 Cloudflare Dashboard 的
+  // Worker → Settings → Domains & Routes 维护（见 README 的部署章节）。
 
   "env": {
     "production": {
@@ -76,11 +75,11 @@
       ],
       "r2_buckets": [{ "binding": "R2_MEDIA", "bucket_name": "miao-blog-media" }],
       "ai": { "binding": "AI" },
-      "routes": [{ "pattern": "blog.wordtk.com", "custom_domain": true }],
+      // 域名绑定在 Dashboard 维护（见上文注释）。
       "vars": {
         "ENV": "production",
-        "SITE_LOCALE": "zh",
-        "SITE_URL": "https://blog.wordtk.com"
+        "SITE_LOCALE": "zh"
+        // SITE_URL 不在这里：生产值由 Cloudflare Worker 的环境变量提供。
       }
     }
   }
