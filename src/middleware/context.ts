@@ -33,6 +33,9 @@ export const loadContext: MiddlewareHandler<AppEnv> = async (c, next) => {
   c.set("site", site);
   c.set("locale", locale);
   c.set("colorMode", colorMode);
+  // 显式落 null：不设的话 `c.get()` 返回 undefined，任何 `!== null` 判断都会误判成「已登录」。
+  c.set("reader", null);
+  c.set("admin", null);
 
   if (readerSession?.kind === "reader" && readerSession.user_json) {
     try {

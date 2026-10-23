@@ -72,6 +72,23 @@ export function githubUrl(raw: string | null | undefined): string | null {
 }
 
 /**
+ * 从后台填的 GitHub 值里取出 login（用户名），用于识别「博主」本人的评论。
+ * 走 githubUrl 归一后取第一段路径；`onblog` / `@onblog` / `https://github.com/onblog/` 都得到 `onblog`。
+ */
+export function githubLogin(raw: string | null | undefined): string | null {
+  const url = githubUrl(raw);
+  if (!url) return null;
+  try {
+    const segment = new URL(url).pathname.split("/").filter(Boolean)[0];
+    if (!segment) return null;
+    const login = segment.replace(/^@/, "").trim();
+    return login || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * slug 生成：保留 Unicode 字母/数字（含汉字），其余转连字符。
  *
  * 只用于**标签与合集**的地址。文章地址走 `allocateNumericSlug()`（纯毫秒数字），

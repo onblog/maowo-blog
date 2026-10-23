@@ -2,6 +2,7 @@ import { t } from "../lib/i18n";
 import type { AdminUser, CommentNode, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import { Layout, siteName } from "./layout";
 import { formatDate } from "./format";
+import { githubLogin } from "../lib/brand";
 
 type Base = {
   site: SiteRow;
@@ -16,6 +17,7 @@ function CommentItem({
   locale,
   reader,
   admin,
+  ownerLogin,
   postSlug,
   depth = 0,
 }: {
@@ -23,10 +25,14 @@ function CommentItem({
   locale: Locale;
   reader: ReaderUser | null;
   admin: AdminUser | null;
+  ownerLogin: string | null;
   postSlug: string;
   depth?: number;
 }) {
-  const isOwner = admin !== null;
+  // 访客身份（能不能操作评论）与「这条评论是不是博主本人发的」是两件事，必须分开判断。
+  const canModerate = admin !== null;
+  const isSiteOwner =
+    ownerLogin !== null && node.login.trim().toLowerCase() === ownerLogin.trim().toLowerCase();
   const name = node.display_name || node.login;
   return (
     <li class={`comment${depth > 0 ? " comment--reply" : ""}`} id={`c-${node.id}`}>
@@ -48,7 +54,7 @@ function CommentItem({
           </span>
           <span class="comment__meta">
             <time datetime={new Date(node.created_at).toISOString()}>{formatDate(node.created_at, locale)}</time>
-            {isOwner && node.website ? <span class="comment__owner-badge">{t(locale, "comments.owner")}</span> : null}
+            {isSiteOwner ? <span class="comment__owner-badge">{t(locale, "comments.owner")}</span> : null}
           </span>
         </div>
       </div>
@@ -68,7 +74,7 @@ function CommentItem({
             {t(locale, "comments.login")}
           </a>
         )}
-        {isOwner ? (
+        {canModerate ? (
           <>
             <button class="comment__admin-btn" type="button" data-hide-comment={node.id} data-status={node.status}>
               {node.status === "visible" ? t(locale, "admin.comments.hide") : t(locale, "admin.comments.show")}
@@ -87,6 +93,7 @@ function CommentItem({
               locale={locale}
               reader={reader}
               admin={admin}
+              ownerLogin={ownerLogin}
               postSlug={postSlug}
               depth={depth + 1}
             />
@@ -115,6 +122,8 @@ function CommentSection({
   commentCount: number;
 }) {
   const enabled = site.comments_enabled === 1;
+  // 「博主」标签认人：用设置页填的 GitHub 地址解析出 login，再和评论里存的 GitHub 原始 login 比对。
+  const ownerLogin = githubLogin(site.owner_github);
 
   if (!enabled) {
     return (
@@ -181,7 +190,14 @@ function CommentSection({
       ) : (
         <ul class="comment-list">
           {comments.map((node) => (
-            <CommentItem node={node} locale={locale} reader={reader} admin={admin} postSlug={postSlug} />
+            <CommentItem
+              node={node}
+              locale={locale}
+              reader={reader}
+              admin={admin}
+              ownerLogin={ownerLogin}
+              postSlug={postSlug}
+            />
           ))}
         </ul>
       )}

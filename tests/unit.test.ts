@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { messages, t } from "../src/lib/i18n";
-import { slugify, wordCount, readingMinutes, formatDate } from "../src/lib/brand";
+import { slugify, wordCount, readingMinutes, formatDate, githubLogin } from "../src/lib/brand";
 import { excerpt, renderMarkdown, renderMarkdownWithToc } from "../src/lib/markdown";
 
 describe("i18n", () => {
@@ -78,5 +78,21 @@ describe("Markdown 渲染", () => {
     expect(text).toContain("开头");
     expect(text).not.toContain("const a");
     expect(text).not.toContain("|");
+  });
+});
+
+describe("博主身份识别", () => {
+  it("从后台填的 GitHub 地址解析出 login", () => {
+    expect(githubLogin("https://github.com/onblog/")).toBe("onblog");
+    expect(githubLogin("https://github.com/onblog")).toBe("onblog");
+    expect(githubLogin("onblog")).toBe("onblog");
+    expect(githubLogin("@onblog")).toBe("onblog");
+    expect(githubLogin("github.com/onblog")).toBe("onblog");
+  });
+
+  it("没填或填了空值时不产生 login（此时不显示任何博主标签）", () => {
+    expect(githubLogin(null)).toBeNull();
+    expect(githubLogin("")).toBeNull();
+    expect(githubLogin("   ")).toBeNull();
   });
 });
