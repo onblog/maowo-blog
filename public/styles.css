@@ -2360,6 +2360,12 @@ button {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+.publish-success__hint {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
 .publish-dialog__actions {
   display: flex;
   justify-content: flex-end;

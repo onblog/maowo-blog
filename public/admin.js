@@ -406,6 +406,35 @@
       };
     }
 
+    /**
+     * 保存成功后的确认框：只有一个「确定」，点它才刷新。
+     * 之前是保存后 500ms 直接跳转，作者来不及确认「到底存成草稿还是发出去了」。
+     */
+    function showSaveSuccess(post, isDraft) {
+      var dialog = document.createElement("dialog");
+      dialog.className = "publish-dialog";
+      dialog.innerHTML =
+        '<div class="publish-dialog__form">' +
+        '<h2 class="publish-dialog__title">' + (isDraft ? "已保存为草稿" : "发布成功") + "</h2>" +
+        '<p class="publish-success__hint">' +
+        (isDraft ? "草稿不会出现在前台，随时可以回来继续写。" : "文章已经上线，读者现在可以看到了。") +
+        "</p>" +
+        '<div class="publish-dialog__actions">' +
+        '<button class="btn btn--primary" type="button" data-success-confirm>确定</button>' +
+        "</div></div>";
+      document.body.appendChild(dialog);
+
+      // 只留一个出口：屏蔽 Esc，避免"关掉弹窗但没刷新"的中间态
+      dialog.addEventListener("cancel", function (event) {
+        event.preventDefault();
+      });
+      dialog.showModal();
+
+      dialog.querySelector("[data-success-confirm]").addEventListener("click", function () {
+        window.location.reload();
+      });
+    }
+
     function savePost() {
       if (!publishForm) return;
       var payload = collectPayload();
@@ -451,10 +480,8 @@
         if (!id) {
           history.replaceState(null, "", "/admin/edit/" + post.id);
         }
-        setTimeout(function () {
-          if (publishDialog) publishDialog.close();
-          window.location.href = "/admin/edit/" + post.id;
-        }, 500);
+        if (publishDialog) publishDialog.close();
+        showSaveSuccess(result.data.post, payload.status === "draft");
       });
     }
 
