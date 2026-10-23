@@ -26,6 +26,24 @@
     });
   });
 
+  // ── 轻量 toast：顶部滑入，3 秒后淡出 ─────────────────────────────────
+  function showToast(message) {
+    var toast = document.createElement("div");
+    toast.className = "toast";
+    toast.setAttribute("role", "status");
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    window.requestAnimationFrame(function () {
+      toast.classList.add("toast--show");
+    });
+    window.setTimeout(function () {
+      toast.classList.remove("toast--show");
+      window.setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, 3000);
+  }
+
   // ── 代码块复制（事件委托：编辑器预览里动态插入的代码块也覆盖）──
   document.addEventListener("click", function (event) {
     var btn = event.target.closest("[data-copy-code]");
@@ -39,6 +57,7 @@
       btn.classList.add("is-copied");
       btn.title = "已复制";
       btn.setAttribute("aria-label", "已复制");
+      showToast("复制成功");
       setTimeout(function () {
         btn.classList.remove("is-copied");
         btn.title = "复制代码";

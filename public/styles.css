@@ -1899,6 +1899,38 @@ button {
   }
 }
 
+/* ── 轻量 toast（复制成功等即时反馈）────────────────────────────────── */
+.toast {
+  position: fixed;
+  /* 顶栏是 sticky 且高 66px，toast 落在它下方才不遮导航 */
+  top: 80px;
+  left: 50%;
+  z-index: 300;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 2px solid var(--hairline);
+  box-shadow: var(--shadow-float);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -14px);
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.toast--show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: opacity 0.2s ease;
+    transform: translate(-50%, 0);
+  }
+}
+
 /* ── 页脚 ──────────────────────────────────────────────────────────────── */
 .site-footer {
   border-top: 2px solid var(--hairline);

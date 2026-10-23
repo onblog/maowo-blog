@@ -22,6 +22,24 @@
     });
   });
 
+  // ── 轻量 toast（与前台同一套视觉）──
+  function showToast(message) {
+    var toast = document.createElement("div");
+    toast.className = "toast";
+    toast.setAttribute("role", "status");
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    window.requestAnimationFrame(function () {
+      toast.classList.add("toast--show");
+    });
+    window.setTimeout(function () {
+      toast.classList.remove("toast--show");
+      window.setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, 3000);
+  }
+
   // ── 代码块复制（编辑器预览区也会渲染同样的按钮）──
   document.addEventListener("click", function (event) {
     var btn = event.target.closest("[data-copy-code]");
@@ -33,6 +51,7 @@
     function markDone() {
       btn.classList.add("is-copied");
       btn.title = "已复制";
+      showToast("复制成功");
       setTimeout(function () {
         btn.classList.remove("is-copied");
         btn.title = "复制代码";
