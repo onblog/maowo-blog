@@ -130,8 +130,10 @@ export async function getById(env: Env, id: string): Promise<PostRow | null> {
 }
 
 export async function listAllForAdmin(env: Env): Promise<PostRow[]> {
+  // 按**发布时间**倒序：作者关心的是「什么时候发的」，编辑一下不该把文章顶到最前。
+  // 草稿没有发布时间，SQLite 的 DESC 会把 NULL 排在最后。
   const { results } = await env.DB.prepare(
-    "SELECT * FROM posts ORDER BY updated_at DESC LIMIT 500",
+    "SELECT * FROM posts ORDER BY published_at DESC LIMIT 500",
   ).all<PostRow>();
   return results;
 }

@@ -191,7 +191,7 @@ api.put("/admin/posts/:id", requireAdminApi, async (c) => {
 /** 列出全部文章（Agent 拿 id 用；后台列表页走 SSR，不依赖这里） */
 api.get("/admin/posts", requireAdminApi, async (c) => {
   const { results } = await c.env.DB.prepare(
-    "SELECT id, slug, title, status, lang, pinned, views, reading_minutes, published_at, series_id, created_at, updated_at FROM posts ORDER BY COALESCE(published_at, updated_at) DESC LIMIT 500",
+    "SELECT id, slug, title, status, lang, pinned, views, reading_minutes, published_at, series_id, created_at, updated_at FROM posts ORDER BY published_at DESC LIMIT 500",
   ).all<Record<string, unknown>>();
   return c.json({ ok: true, posts: results });
 });
