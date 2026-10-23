@@ -211,7 +211,7 @@ export function Layout(props: LayoutProps) {
         {canonicalUrl ? <meta property="og:url" content={canonicalUrl} /> : null}
         {ogImage ? <meta property="og:image" content={ogImage} /> : null}
         <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
-        <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="alternate" type="application/rss+xml" title={`${name} · RSS`} href="/feed.xml" />
         <link rel="stylesheet" href={`/styles.css?v=${ASSET_VERSION}`} />
         {/* 主题必须在样式表之前决定，否则暗色用户会先看到一帧白屏 */}

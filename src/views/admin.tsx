@@ -36,7 +36,7 @@ export function AdminShell({ site, locale, colorMode, admin, active, children }:
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`${t(locale, "admin.login.title")} · ${name}`}</title>
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="stylesheet" href={`/styles.css?v=${ASSET_VERSION}`} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
