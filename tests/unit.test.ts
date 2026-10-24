@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { messages, t } from "../src/lib/i18n";
 import { slugify, wordCount, readingMinutes, formatDate, githubLogin } from "../src/lib/brand";
 import { excerpt, renderMarkdown, renderMarkdownWithToc } from "../src/lib/markdown";
+import { getNeighbours } from "../src/services/posts";
+import type { PostRow } from "../src/types";
 
 describe("i18n", () => {
   it("中英文键集合完全一致（新增文案必须两份都写）", () => {
@@ -104,5 +106,50 @@ describe("博主身份识别", () => {
     expect(githubLogin(null)).toBeNull();
     expect(githubLogin("")).toBeNull();
     expect(githubLogin("   ")).toBeNull();
+  });
+});
+
+/**
+ * 上下篇方向：上一篇 = 更早发布，下一篇 = 更晚发布。
+ * 这组断言盯的是 SQL 的方向，不是数据 —— 之前它反了（上一篇指向更新的文章），
+ * 肉眼几乎看不出来，只有「←」箭头和 rel="prev" 一直在说反话。
+ */
+describe("上下篇方向", () => {
+  const stubEnv = () => {
+    const sqls: string[] = [];
+    let call = 0;
+    const env = {
+      DB: {
+        prepare(sql: string) {
+          sqls.push(sql);
+          const isPrev = call === 0;
+          call += 1;
+          return {
+            bind: () => ({
+              first: async () =>
+                (isPrev ? { slug: "older", title: "更早的一篇" } : { slug: "newer", title: "更晚的一篇" }) as unknown,
+            }),
+          };
+        },
+      },
+    } as unknown as Env;
+    return { env, sqls };
+  };
+
+  it("上一篇取更早（published_at 更小），下一篇取更晚", async () => {
+    const { env, sqls } = stubEnv();
+    await getNeighbours(env, { published_at: 5000 } as PostRow);
+
+    expect(sqls[0]).toMatch(/published_at < \?/);
+    expect(sqls[0]).toMatch(/ORDER BY published_at DESC/);
+    expect(sqls[1]).toMatch(/published_at > \?/);
+    expect(sqls[1]).toMatch(/ORDER BY published_at ASC/);
+  });
+
+  it("返回值也按方向落位：prev 是更早的，next 是更晚的", async () => {
+    const { env } = stubEnv();
+    const { prev, next } = await getNeighbours(env, { published_at: 5000 } as PostRow);
+    expect(prev?.slug).toBe("older");
+    expect(next?.slug).toBe("newer");
   });
 });

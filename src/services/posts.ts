@@ -138,21 +138,28 @@ export async function listAllForAdmin(env: Env): Promise<PostRow[]> {
   return results;
 }
 
-/** 相邻文章：站点只有一种语言（SITE_LOCALE），直接按发布时间取 */
+/**
+ * 相邻文章：站点只有一种语言（SITE_LOCALE），直接按发布时间取。
+ *
+ * 方向按阅读顺序（也是 `rel="prev"` / `rel="next"` 的语义）：
+ * **上一篇 = 更早发布的，下一篇 = 更晚发布的**。
+ * 别把两个条件对调 —— 对调之后"上一篇"会指向未来，而页面上的「←」箭头和
+ * `rel="prev"` 都还在说反话，搜索引擎与读者都会拿到错的顺序。
+ */
 export async function getNeighbours(
   env: Env,
   post: PostRow,
 ): Promise<{ prev: PostRow | null; next: PostRow | null }> {
   const publishedAt = post.published_at ?? 0;
   const prev = await env.DB.prepare(
-    `SELECT * FROM posts WHERE status = 'published' AND published_at > ?
-      ORDER BY published_at ASC LIMIT 1`,
+    `SELECT * FROM posts WHERE status = 'published' AND published_at < ?
+      ORDER BY published_at DESC LIMIT 1`,
   )
     .bind(publishedAt)
     .first<PostRow>();
   const next = await env.DB.prepare(
-    `SELECT * FROM posts WHERE status = 'published' AND published_at < ?
-      ORDER BY published_at DESC LIMIT 1`,
+    `SELECT * FROM posts WHERE status = 'published' AND published_at > ?
+      ORDER BY published_at ASC LIMIT 1`,
   )
     .bind(publishedAt)
     .first<PostRow>();
