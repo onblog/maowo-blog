@@ -6,7 +6,7 @@ import {
   normalizeForMatch,
   parseSensitiveWordList,
 } from "../src/lib/sensitive-words";
-import { formatSensitiveWordExport } from "../src/services/sensitive-words";
+import { SENSITIVE_ROWS_PER_INSERT, formatSensitiveWordExport } from "../src/services/sensitive-words";
 
 describe("normalizeForMatch", () => {
   it("去掉空白、标点与符号", () => {
@@ -95,5 +95,14 @@ describe("formatSensitiveWordExport", () => {
 
   it("空表导出空串", () => {
     expect(formatSensitiveWordExport([])).toBe("");
+  });
+});
+
+describe("上传批大小受 D1 参数上限约束", () => {
+  it("单条 INSERT 的绑定参数不超过 100（4 参数/行，故行数 ≤ 25）", () => {
+    // 2202 词的真实词表曾用 100 行/语句（400 参数）上传，线上直接 500：
+    // D1_ERROR: too many SQL variables。这条断言把上限钉死在 25 行以内。
+    expect(SENSITIVE_ROWS_PER_INSERT).toBeLessThanOrEqual(25);
+    expect(SENSITIVE_ROWS_PER_INSERT * 4).toBeLessThanOrEqual(100);
   });
 });

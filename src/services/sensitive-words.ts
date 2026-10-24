@@ -20,8 +20,14 @@ export type ScanResult =
   | { hit: false }
   | { hit: true; category: string; word: string };
 
-/** 单批 INSERT 的行数：4 个参数/行 × 100 = 400，远低于 D1 的 999 参数上限。 */
-const INSERT_BATCH = 100;
+/**
+ * 单条 INSERT 的行数。D1 对**单条查询**的绑定参数上限是 **100**，每行 4 个参数
+ * （word / category / source / created_at），所以最多 25 行；取 20 行（80 参数）留余量。
+ *
+ * ⚠️ 早先写的是 100 行（400 参数）：2 个词的小样本一切正常，2202 词的真实词表一传
+ * 就 `D1_ERROR: too many SQL variables`，接口 500，后台只显示「上传失败」。
+ */
+export const SENSITIVE_ROWS_PER_INSERT = 20;
 
 /**
  * 扫描一段评论。**命中即返回**，不告诉调用方命中了几处。
@@ -61,14 +67,14 @@ export async function sensitiveWordStats(env: Env): Promise<SensitiveWordStats> 
  * 整份覆盖词表：先清空，再分批插入。
  *
  * 用 `DELETE` + 多值 `INSERT` 而不是逐条 upsert：管理员的语义是「这份文件就是全部词」，
- * 增量合并会让删词变得不可能。批数上限由 `SENSITIVE_WORD_LIMIT` 保证（最多 50 条语句）。
+ * 增量合并会让删词变得不可能。语句数上限由 `SENSITIVE_WORD_LIMIT` 保证（最多 250 条）。
  */
 export async function replaceSensitiveWords(env: Env, entries: SensitiveWordEntry[]): Promise<void> {
   const now = Date.now();
   const statements: D1PreparedStatement[] = [env.DB.prepare("DELETE FROM sensitive_words")];
 
-  for (let i = 0; i < entries.length; i += INSERT_BATCH) {
-    const chunk = entries.slice(i, i + INSERT_BATCH);
+  for (let i = 0; i < entries.length; i += SENSITIVE_ROWS_PER_INSERT) {
+    const chunk = entries.slice(i, i + SENSITIVE_ROWS_PER_INSERT);
     const values = chunk.map(() => "(?, ?, ?, ?)").join(", ");
     statements.push(
       env.DB.prepare(
