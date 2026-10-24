@@ -1970,8 +1970,22 @@ a.post-nav__item:hover {
 .site-footer a:hover {
   color: var(--accent-deep);
 }
-/* 系统来源统一大写：@MAOWO-BLOG */
-.site-footer__meta a:first-child {
+/*
+ * 仓库入口：GitHub 图标 + 名称。
+ * 用 inline-flex 而不是行内 SVG：图标与文字各自成项，gap 控制间距，
+ * 基线由文字（span）提供，和左侧版权行在同一条基线上，不用 vertical-align 魔法数值。
+ */
+.site-footer__repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.site-footer__repo svg {
+  /* 图标比字号略小一点，视觉上与 13px 小写高度齐平 */
+  flex: none;
+}
+/* 系统来源统一大写：MAOWO-BLOG */
+.site-footer__meta .site-footer__repo {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
