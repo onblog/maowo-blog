@@ -129,6 +129,24 @@ push 到 `main` 后 Workers Builds 会自动构建并部署，一次大约 **1�
 | `GITHUB_CLIENT_SECRET` | 评论需要 | — | **secret**，绝不进仓库 |
 | `ENV` | 否 | `development` | 生产环境设为 `production` |
 
+`SITE_URL` **必须在 Cloudflare Dashboard 里给生产 Worker 设**（Settings → Variables and Secrets），
+仓库里只写本地开发用的 `http://127.0.0.1:8789`。两种写法都可以，值是纯文本、不是密钥：
+
+```bash
+# 一次性写入线上 Worker（值不落进仓库，之后由 keep_vars 保留）
+npx wrangler deploy --env production --var SITE_URL:https://你的域名
+```
+
+写错或漏写不会报错，但会静默污染全站：`canonical` / `og:url` / `sitemap.xml` / `robots.txt` 的
+Sitemap 行 / RSS 里的链接 / GitHub OAuth 回调地址全都会变成那个值。部署后抽查一句最快：
+
+```bash
+curl -s https://你的域名/robots.txt | grep Sitemap   # 应为线上域名
+```
+
+`wrangler.jsonc` 开了 `keep_vars`：Dashboard 上设的变量不会被 `wrangler deploy` 覆盖或删除，
+所以只需设这一次。
+
 后台账号密码存在 D1（`admin_credentials` 单行表），在 `/admin/account` 页修改，不再走环境变量。
 默认的 `admin` / `admin` 第一次登录必须换掉。
 

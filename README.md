@@ -137,6 +137,26 @@ first post.
 | `GITHUB_CLIENT_SECRET` | for comments | — | **Secret.** Never commit it. |
 | `ENV` | no | `development` | Set to `production` when deployed. |
 
+`SITE_URL` **must be set on the production Worker in the Cloudflare dashboard** (Settings → Variables
+and Secrets). The repo only carries the local `http://127.0.0.1:8789` default. Either way, it is a
+plain text value, not a secret:
+
+```bash
+# write it once to the deployed Worker (the value never enters git; keep_vars retains it afterwards)
+npx wrangler deploy --env production --var SITE_URL:https://YOUR_DOMAIN
+```
+
+Getting it wrong fails silently and pollutes every URL the site emits: `canonical`, `og:url`,
+`sitemap.xml`, the Sitemap line in `robots.txt`, links inside the RSS feed, and the GitHub OAuth
+callback. One line checks it after a deploy:
+
+```bash
+curl -s https://YOUR_DOMAIN/robots.txt | grep Sitemap   # must show the production domain
+```
+
+`wrangler.jsonc` sets `keep_vars`, so a dashboard-managed variable survives later `wrangler deploy`
+runs — it only has to be set once.
+
 The admin username and password are stored in D1 (`admin_credentials`, single row) and changed under
 `/admin/account` — not through environment variables. The default `admin` / `admin` must be replaced
 on first login.
