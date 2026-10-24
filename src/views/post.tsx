@@ -313,7 +313,15 @@ export function PostPage({
                 <span class="post-nav__title">{prev.title}</span>
               </a>
             ) : (
-              <span />
+              /*
+               * 到头了也要有卡：空一半会让人以为加载失败，而且两列高度不齐。
+               * 占位卡沿用同一套结构（标签 + 文案），只换成虚线描边和弱化文字，
+               * 一眼能看出"这里是空的"，又保持左右对称（见 styles.css 的 --none）。
+               */
+              <div class="post-nav__item post-nav__item--none">
+                <span class="post-nav__label">← {t(locale, "post.prev")}</span>
+                <span class="post-nav__title">{t(locale, "post.prev_none")}</span>
+              </div>
             )}
             {next ? (
               <a class="post-nav__item post-nav__item--next" href={`/p/${next.slug}`} rel="next">
@@ -321,7 +329,10 @@ export function PostPage({
                 <span class="post-nav__title">{next.title}</span>
               </a>
             ) : (
-              <span />
+              <div class="post-nav__item post-nav__item--next post-nav__item--none">
+                <span class="post-nav__label">{t(locale, "post.next")} →</span>
+                <span class="post-nav__title">{t(locale, "post.next_none")}</span>
+              </div>
             )}
           </nav>
 

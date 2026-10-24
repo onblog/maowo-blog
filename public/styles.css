@@ -1209,13 +1209,27 @@ button {
   text-decoration: none;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.post-nav__item:hover {
+a.post-nav__item:hover {
   border-color: var(--hairline-strong);
   transform: translateY(-1px);
 }
 .post-nav__item--next {
   text-align: right;
   grid-column: 2;
+}
+/*
+ * 没有上一篇 / 下一篇时的占位卡：结构、内边距、尺寸与真卡一致（保证两列不塌、高度齐平），
+ * 只把描边换成虚线、文字压低一档 —— 视觉上读作"到头了"，而不是"这里坏了/没加载出来"。
+ * 它不是链接，所以上面那条 hover 只对 a.post-nav__item 生效。
+ */
+.post-nav__item--none {
+  border-style: dashed;
+  background: var(--surface-soft);
+  cursor: default;
+}
+.post-nav__item--none .post-nav__title {
+  color: var(--ink-muted);
+  font-weight: 600;
 }
 .post-nav__label {
   font-size: 12px;
