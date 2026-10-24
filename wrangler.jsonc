@@ -62,13 +62,15 @@
   },
 
   "vars": {
-    "ENV": "development",
+    // ⚠️ Workers Builds 跑的是**不带 `--env production` 的 `wrangler deploy`**，
+    // 也就是说这一节里的 vars 会被原样当成生产变量。所以这里只放"两种环境取值相同"的东西，
+    // 任何只适合本地开发的默认值（尤其 SITE_URL）都别写进来 —— 它会被静默带上生产。
+    //
+    // SITE_URL 因此不在仓库里：本地写在 `.dev.vars`（gitignore，见 .dev.vars.example），
+    // 生产写在 Cloudflare Dashboard 的 Worker 变量里，由下面 keep_vars 保住。
+    //
     // 站点语言：部署时定死，运行时不做切换（zh 默认 / en）。
     "SITE_LOCALE": "zh",
-    // SITE_URL 决定 OAuth 的 redirect_uri，必须与 GitHub OAuth App 注册的回调地址一致。
-    // 这里只放**本地开发默认值**；生产值由 Cloudflare Worker 的环境变量提供
-    // （Settings → Variables and Secrets），所以仓库里不出现线上域名。
-    "SITE_URL": "http://127.0.0.1:8789",
     // GitHub OAuth 的 CLIENT_ID 与 SECRET 都走 secret（本地 .dev.vars）。
     // ⚠️ 不要在这里写空字符串：vars 会覆盖同名 secret。
     // 后台账号密码也不在这里：它们存在 D1 的 `admin_credentials` 表里（迁移 0007），
@@ -93,9 +95,8 @@
       "ai": { "binding": "AI" },
       // 域名绑定在 Dashboard 维护（见上文注释）。
       "vars": {
-        "ENV": "production",
         "SITE_LOCALE": "zh"
-        // SITE_URL 不在这里：生产值由 Cloudflare Worker 的环境变量提供。
+        // SITE_URL 不在这里：生产值写在 Dashboard 的 Worker 变量里（keep_vars 保住它）。
       }
     }
   }

@@ -127,14 +127,15 @@ push 到 `main` 后 Workers Builds 会自动构建并部署，一次大约 **1�
 | `SITE_LOCALE` | 否 | `zh` | **部署时定死**的界面语言：`zh` 或 `en` |
 | `GITHUB_CLIENT_ID` | 评论需要 | — | 公开值，可放 `vars` |
 | `GITHUB_CLIENT_SECRET` | 评论需要 | — | **secret**，绝不进仓库 |
-| `ENV` | 否 | `development` | 生产环境设为 `production` |
 
-`SITE_URL` **必须在 Cloudflare Dashboard 里给生产 Worker 设**（Settings → Variables and Secrets），
-仓库里只写本地开发用的 `http://127.0.0.1:8789`。两种写法都可以，值是纯文本、不是密钥：
+`SITE_URL` **刻意不写进 `wrangler.jsonc`**：Workers Builds 跑的是不带 `--env production` 的
+`wrangler deploy`，顶层 `vars` 里的一切都会被原样盖章到生产上。它只放两处 —— 本地开发在
+`.dev.vars`（见 `.dev.vars.example`），生产在 Dashboard 的 Worker 变量里
+（Settings → Variables and Secrets）。值是纯文本、不是密钥：
 
 ```bash
 # 一次性写入线上 Worker（值不落进仓库，之后由 keep_vars 保留）
-npx wrangler deploy --env production --var SITE_URL:https://你的域名
+npx wrangler deploy --var SITE_URL:https://你的域名
 ```
 
 写错或漏写不会报错，但会静默污染全站：`canonical` / `og:url` / `sitemap.xml` / `robots.txt` 的

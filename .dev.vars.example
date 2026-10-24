@@ -1,5 +1,11 @@
 # 复制为 .dev.vars 后填写（.dev.vars 已在 .gitignore 中，不会进仓库）
 #
+#
+# 本地站点地址：canonical / sitemap / OAuth 回调都从它拼出来。
+# 仓库里**没有**这个默认值 —— wrangler.jsonc 的 vars 会被 Workers Builds 原样带进生产，
+# 所以只能放在这里（本地）/ Dashboard（生产）。不填的话本地页面与后台会报错。
+SITE_URL=http://127.0.0.1:8789
+
 # GitHub OAuth App：https://github.com/settings/developers
 #   Authorization callback URL = <SITE_URL>/api/auth/github/callback
 #   本地与生产各建一个 App（GitHub 每个 App 只允许一个回调地址）

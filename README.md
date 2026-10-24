@@ -135,15 +135,16 @@ first post.
 | `SITE_LOCALE` | no | `zh` | UI language, **fixed at deploy time**. `zh` or `en`. |
 | `GITHUB_CLIENT_ID` | for comments | — | Public value; safe in `vars`. |
 | `GITHUB_CLIENT_SECRET` | for comments | — | **Secret.** Never commit it. |
-| `ENV` | no | `development` | Set to `production` when deployed. |
 
-`SITE_URL` **must be set on the production Worker in the Cloudflare dashboard** (Settings → Variables
-and Secrets). The repo only carries the local `http://127.0.0.1:8789` default. Either way, it is a
-plain text value, not a secret:
+`SITE_URL` is deliberately **not** in `wrangler.jsonc`: Workers Builds runs a plain `wrangler deploy`
+(no `--env production`), so anything in the top-level `vars` block is stamped onto production as-is.
+Instead it lives in two places — `.dev.vars` for local dev (see `.dev.vars.example`) and the Worker's
+variables in the Cloudflare dashboard for production (Settings → Variables and Secrets). It is a plain
+text value, not a secret:
 
 ```bash
 # write it once to the deployed Worker (the value never enters git; keep_vars retains it afterwards)
-npx wrangler deploy --env production --var SITE_URL:https://YOUR_DOMAIN
+npx wrangler deploy --var SITE_URL:https://YOUR_DOMAIN
 ```
 
 Getting it wrong fails silently and pollutes every URL the site emits: `canonical`, `og:url`,
