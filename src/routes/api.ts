@@ -27,6 +27,13 @@ import {
   setStatus,
 } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
+import { parseSensitiveWordList } from "../lib/sensitive-words";
+import {
+  clearSensitiveWords,
+  replaceSensitiveWords,
+  scanComment,
+  sensitiveWordStats,
+} from "../services/sensitive-words";
 import { renderMarkdown } from "../lib/markdown";
 import { getSite, updateSite } from "../services/site";
 import type { AppEnv, Locale } from "../types";
@@ -87,6 +94,25 @@ api.post("/comments", async (c) => {
 
   const site = await getSite(c.env);
   if (site.comments_enabled !== 1) return c.json({ error: "comments_disabled" }, 403);
+
+  // 敏感词前置拦截：命中就不入库、不占额度，直接告诉用户「包含不当内容」。
+  // 提示刻意**不说是哪一类**：告诉刷词的人命中了哪个分类，等于把词表结构泄给他。
+  // 日志里只记分类与长度，不记命中的词，也不记评论原文。
+  const banned = await scanComment(c.env, text);
+  if (banned.hit) {
+    console.log(
+      JSON.stringify({
+        level: "warn",
+        msg: "comment.banned_word",
+        id: c.get("requestId"),
+        postId: post.id,
+        userId: reader.githubId,
+        category: banned.category,
+        contentLength: text.length,
+      }),
+    );
+    return c.json({ error: "banned_content" }, 400);
+  }
 
   const last = await lastCommentAt(c.env, reader.githubId);
   if (last && Date.now() - last < COMMENT_COOLDOWN_SECONDS * 1000) {
@@ -326,6 +352,44 @@ api.post("/admin/comments/:id/status", requireAdminApi, async (c) => {
 
 api.delete("/admin/comments/:id", requireAdminApi, async (c) => {
   await remove(c.env, c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+// ── 后台：评论敏感词 ────────────────────────────────────────────────────────
+//
+// 词表整份覆盖：上传的 txt 就是「当前全部词」，支持删词。空文件等于停用。
+// 词表不进仓库（见 migrations/0009 的说明），所以这里也是唯一的维护入口。
+
+api.get("/admin/sensitive-words", requireAdminApi, async (c) => {
+  const stats = await sensitiveWordStats(c.env);
+  return c.json({ ok: true, ...stats });
+});
+
+api.put("/admin/sensitive-words", requireAdminApi, async (c) => {
+  const body = await c.req.json<{ text?: string }>();
+  const parsed = parseSensitiveWordList(body.text ?? "");
+  await replaceSensitiveWords(c.env, parsed.entries);
+  console.log(
+    JSON.stringify({
+      level: "info",
+      msg: "sensitive-words.updated",
+      id: c.get("requestId"),
+      total: parsed.entries.length,
+      skipped: parsed.skipped,
+      truncated: parsed.truncated,
+    }),
+  );
+  return c.json({
+    ok: true,
+    total: parsed.entries.length,
+    skipped: parsed.skipped,
+    truncated: parsed.truncated,
+    limit: parsed.entries.length + parsed.truncated,
+  });
+});
+
+api.delete("/admin/sensitive-words", requireAdminApi, async (c) => {
+  await clearSensitiveWords(c.env);
   return c.json({ ok: true });
 });
 

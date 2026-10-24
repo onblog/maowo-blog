@@ -1,10 +1,12 @@
 import type { Child } from "hono/jsx";
 import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
+import { categoryLabel } from "../lib/sensitive-words";
 import { Mascot, MoonIcon, siteName, SunIcon } from "./layout";
 import { THEME_BOOT_SCRIPT } from "../lib/theme";
 import { ASSET_VERSION } from "../lib/brand";
 import { formatDate } from "./format";
+import type { SensitiveWordStats } from "../services/sensitive-words";
 
 type Shell = {
   site: SiteRow;
@@ -556,11 +558,13 @@ export function AdminSettingsPage({
   locale,
   colorMode,
   admin,
+  sensitiveWords,
 }: {
   site: SiteRow;
   locale: Locale;
   colorMode: ColorMode;
   admin: AdminUser;
+  sensitiveWords: SensitiveWordStats;
 }) {
   return (
     <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="settings">
@@ -653,6 +657,47 @@ export function AdminSettingsPage({
           </button>
         </div>
       </form>
+
+      {/*
+        评论敏感词：整份覆盖式维护。词表不进仓库（政治/色情词不适合公开分发），
+        所以这里是唯一的维护入口；上传后立即生效，命中即拒绝评论。
+      */}
+      <section class="admin-form" data-sensitive-words>
+        <h2 class="admin-title admin-title--sub">{t(locale, "admin.sensitive.title")}</h2>
+        <p class="muted">
+          {sensitiveWords.total > 0
+            ? t(locale, "admin.sensitive.summary", {
+                n: sensitiveWords.total,
+                cats: sensitiveWords.categories
+                  .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
+                  .join(" · "),
+              })
+            : t(locale, "admin.sensitive.empty")}
+        </p>
+        <p class="muted">{t(locale, "admin.sensitive.format")}</p>
+        <label class="field">
+          <span class="field__label">{t(locale, "admin.sensitive.file")}</span>
+          <input type="file" accept=".txt,text/plain" data-sensitive-file />
+        </label>
+        <label class="field">
+          <span class="field__label">{t(locale, "admin.sensitive.text")}</span>
+          <textarea
+            class="field__input"
+            rows={10}
+            data-sensitive-text
+            placeholder={"# 政治\n示例词A\n示例词B\n# 色情\n示例词C"}
+          />
+        </label>
+        <div class="admin-form__actions">
+          <p class="editor__status" data-sensitive-status />
+          <button class="btn btn--ghost" type="button" data-sensitive-clear>
+            {t(locale, "admin.sensitive.clear")}
+          </button>
+          <button class="btn btn--primary" type="button" data-sensitive-save>
+            {t(locale, "admin.sensitive.save")}
+          </button>
+        </div>
+      </section>
 
       <dialog class="link-dialog" data-link-dialog>
         <form method="dialog" class="link-dialog__form" data-link-form>

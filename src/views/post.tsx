@@ -142,7 +142,7 @@ function CommentSection({
       </h2>
 
       {reader ? (
-        <form class="comment-form" data-comment-form>
+        <form class="comment-form" data-comment-form data-banned-hint={t(locale, "comments.banned_content")}>
           <div class="comment-form__who">
             {reader.avatarUrl ? (
               <img class="comment__avatar" src={reader.avatarUrl} alt="" width="32" height="32" />

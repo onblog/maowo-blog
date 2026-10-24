@@ -5,6 +5,7 @@ import { getById, listAllForAdmin } from "../services/posts";
 import { listAll } from "../services/comments";
 import { buildAgentPrompt } from "../lib/agent-prompt";
 import { getSeriesById, listSeriesNames } from "../services/series";
+import { sensitiveWordStats } from "../services/sensitive-words";
 import {
   AdminAccountPage,
   AdminCommentsPage,
@@ -106,7 +107,11 @@ adminPages.get("/comments", async (c) => {
 adminPages.get("/settings", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
-  return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} />);
+  // 敏感词统计与站点设置一起 SSR：后台设置页要显示「当前几词、分几类」
+  const sensitiveWords = await sensitiveWordStats(c.env);
+  return c.html(
+    <AdminSettingsPage {...base(c)} admin={c.get("admin")!} sensitiveWords={sensitiveWords} />,
+  );
 });
 
 adminPages.get("/account", async (c) => {

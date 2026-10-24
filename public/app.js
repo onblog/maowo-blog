@@ -341,9 +341,11 @@
                 ? "今天的评论次数用完啦，明天再来吧～"
                 : error === "daily_limit"
                   ? "今天的评论已经到上限啦，明天再来吧～"
-                  : error === "unauthorized"
-                    ? "登录已过期，请重新登录"
-                    : "发表失败，请稍后再试";
+                  : error === "banned_content"
+                    ? form.getAttribute("data-banned-hint") || "评论包含不当内容，请修改后再试"
+                    : error === "unauthorized"
+                      ? "登录已过期，请重新登录"
+                      : "发表失败，请稍后再试";
           setStatus(message, "error");
           if (submitBtn) {
             submitBtn.disabled = false;

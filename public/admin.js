@@ -981,6 +981,93 @@
     });
   }
 
+  // ── 后台：评论敏感词 ─────────────────────────────────────────────────
+  // 整份覆盖：上传的 txt 就是当前全部词。词表不进仓库（政治/色情词不适合公开），
+  // 所以这里也是唯一维护入口；保存后立即生效，命中即拒绝评论。
+  var sensitiveSection = document.querySelector("[data-sensitive-words]");
+  if (sensitiveSection) {
+    var sensitiveText = sensitiveSection.querySelector("[data-sensitive-text]");
+    var sensitiveFile = sensitiveSection.querySelector("[data-sensitive-file]");
+    var sensitiveStatus = sensitiveSection.querySelector("[data-sensitive-status]");
+    var sensitiveSave = sensitiveSection.querySelector("[data-sensitive-save]");
+    var sensitiveClear = sensitiveSection.querySelector("[data-sensitive-clear]");
+
+    var setSensitiveStatus = function (text, ok) {
+      if (!sensitiveStatus) return;
+      sensitiveStatus.textContent = text || "";
+      sensitiveStatus.className =
+        "editor__status" + (text ? (ok ? " editor__status--ok" : " editor__status--error") : "");
+    };
+
+    if (sensitiveFile) {
+      sensitiveFile.addEventListener("change", function () {
+        var file = sensitiveFile.files && sensitiveFile.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          if (sensitiveText) sensitiveText.value = String(reader.result || "");
+          setSensitiveStatus("已读取 " + file.name + "，确认内容后点保存", true);
+        };
+        reader.onerror = function () {
+          setSensitiveStatus("读取文件失败，请确认是 UTF-8 文本", false);
+        };
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    if (sensitiveSave) {
+      sensitiveSave.addEventListener("click", function () {
+        var text = sensitiveText ? sensitiveText.value : "";
+        sensitiveSave.disabled = true;
+        setSensitiveStatus("保存中……", true);
+        api("/api/admin/sensitive-words", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text: text })
+        })
+          .then(function (result) {
+            if (result.ok && result.data && result.data.ok) {
+              var data = result.data;
+              var extra =
+                data.truncated > 0 ? "；超出上限 " + data.truncated + " 个词未保存" : "";
+              setSensitiveStatus("已保存 " + data.total + " 个词" + extra, true);
+              setTimeout(function () {
+                window.location.reload();
+              }, 900);
+            } else {
+              setSensitiveStatus("保存失败，请稍后再试", false);
+            }
+          })
+          .catch(function () {
+            setSensitiveStatus("网络异常，请稍后再试", false);
+          })
+          .then(function () {
+            sensitiveSave.disabled = false;
+          });
+      });
+    }
+
+    if (sensitiveClear) {
+      sensitiveClear.addEventListener("click", function () {
+        if (!window.confirm("清空后评论将不再被敏感词拦截，确定清空？")) return;
+        api("/api/admin/sensitive-words", { method: "DELETE" })
+          .then(function (result) {
+            if (result.ok) {
+              setSensitiveStatus("词表已清空", true);
+              setTimeout(function () {
+                window.location.reload();
+              }, 700);
+            } else {
+              setSensitiveStatus("清空失败，请稍后再试", false);
+            }
+          })
+          .catch(function () {
+            setSensitiveStatus("网络异常，请稍后再试", false);
+          });
+      });
+    }
+  }
+
   // ── 后台：复制 Agent 提示词 ──────────────────────────────────────────
   var copyBtn = document.querySelector("[data-copy-prompt]");
   if (copyBtn) {

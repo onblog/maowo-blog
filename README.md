@@ -57,6 +57,10 @@ That is the feature.
   identification and site-operator contact (never shown, never returned by an API, never logged). Each account is
   limited to **10 comments per UTC day**, on top of a site-wide daily cap that stops scripted floods. Optional
   "your blog URL" field keeps the independent-blog web-ring culture (comment → return visit → backlink).
+- **Sensitive-word blocking.** Upload a txt list in `/admin/settings` (one word per line, `# 政治` starts a category).
+  Matched comments are rejected with a generic "inappropriate content" message and never reach the database or your
+  daily quota. The list lives in D1, **not in this repo** (political/sexual vocabulary should not be published),
+  is capped at 5000 words, and matching normalizes whitespace/punctuation/fullwidth first.
 - **Agent-ready API.** `/admin/migrate` shows one copy-pasteable prompt; Codex / Claude / WorkBuddy then write,
   publish and migrate posts through the same `/api/admin/*` endpoints the UI uses — no second protocol.
 - **One-click export**: the whole site as JSON. Moving in must not mean being locked in.
