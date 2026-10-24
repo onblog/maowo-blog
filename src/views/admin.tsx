@@ -660,43 +660,38 @@ export function AdminSettingsPage({
 
       {/*
         评论敏感词：整份覆盖式维护。词表不进仓库（政治/色情词不适合公开分发），
-        所以这里是唯一的维护入口；上传后立即生效，命中即拒绝评论。
+        所以这里是唯一的维护入口；上传即覆盖、立即生效，命中即拒绝评论。
+        刻意**不展示词表内容**：它不是给人读的，也不需要在这里编辑 ——
+        要改就下载、改完再上传覆盖。
       */}
-      <section class="admin-form" data-sensitive-words>
-        <h2 class="admin-title admin-title--sub">{t(locale, "admin.sensitive.title")}</h2>
-        <p class="muted">
-          {sensitiveWords.total > 0
-            ? t(locale, "admin.sensitive.summary", {
-                n: sensitiveWords.total,
-                cats: sensitiveWords.categories
-                  .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
-                  .join(" · "),
-              })
-            : t(locale, "admin.sensitive.empty")}
-        </p>
-        <p class="muted">{t(locale, "admin.sensitive.format")}</p>
-        <label class="field">
-          <span class="field__label">{t(locale, "admin.sensitive.file")}</span>
-          <input type="file" accept=".txt,text/plain" data-sensitive-file />
-        </label>
-        <label class="field">
-          <span class="field__label">{t(locale, "admin.sensitive.text")}</span>
-          <textarea
-            class="field__input"
-            rows={10}
-            data-sensitive-text
-            placeholder={"# 政治\n示例词A\n示例词B\n# 色情\n示例词C"}
-          />
-        </label>
-        <div class="admin-form__actions">
-          <p class="editor__status" data-sensitive-status />
+      <section class="admin-form sensitive-panel" data-sensitive-words>
+        <div class="sensitive-panel__head">
+          <h2 class="admin-title admin-title--sub">{t(locale, "admin.sensitive.title")}</h2>
+          <p class="muted" data-sensitive-summary>
+            {sensitiveWords.total > 0
+              ? t(locale, "admin.sensitive.summary", {
+                  n: sensitiveWords.total,
+                  cats: sensitiveWords.categories
+                    .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
+                    .join(" · "),
+                })
+              : t(locale, "admin.sensitive.empty")}
+          </p>
+        </div>
+        <div class="sensitive-panel__actions">
+          <input type="file" accept=".txt,text/plain" data-sensitive-file hidden />
+          <button class="btn btn--primary" type="button" data-sensitive-upload>
+            {t(locale, "admin.sensitive.upload")}
+          </button>
+          <a class="btn btn--ghost" href="/api/admin/sensitive-words/export" download="sensitive-words.txt">
+            {t(locale, "admin.sensitive.download")}
+          </a>
           <button class="btn btn--ghost" type="button" data-sensitive-clear>
             {t(locale, "admin.sensitive.clear")}
           </button>
-          <button class="btn btn--primary" type="button" data-sensitive-save>
-            {t(locale, "admin.sensitive.save")}
-          </button>
+          <p class="editor__status" data-sensitive-status />
         </div>
+        <p class="muted sensitive-panel__hint">{t(locale, "admin.sensitive.hint")}</p>
       </section>
 
       <dialog class="link-dialog" data-link-dialog>

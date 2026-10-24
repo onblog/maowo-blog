@@ -982,15 +982,15 @@
   }
 
   // ── 后台：评论敏感词 ─────────────────────────────────────────────────
-  // 整份覆盖：上传的 txt 就是当前全部词。词表不进仓库（政治/色情词不适合公开），
-  // 所以这里也是唯一维护入口；保存后立即生效，命中即拒绝评论。
+  // 只做三件事：上传（整份覆盖）、下载（纯链接，无需脚本）、清空。
+  // **不展示词表内容** —— 它不是给人读的；要改就下载、改完再上传。
   var sensitiveSection = document.querySelector("[data-sensitive-words]");
   if (sensitiveSection) {
-    var sensitiveText = sensitiveSection.querySelector("[data-sensitive-text]");
     var sensitiveFile = sensitiveSection.querySelector("[data-sensitive-file]");
-    var sensitiveStatus = sensitiveSection.querySelector("[data-sensitive-status]");
-    var sensitiveSave = sensitiveSection.querySelector("[data-sensitive-save]");
+    var sensitiveUpload = sensitiveSection.querySelector("[data-sensitive-upload]");
     var sensitiveClear = sensitiveSection.querySelector("[data-sensitive-clear]");
+    var sensitiveStatus = sensitiveSection.querySelector("[data-sensitive-status]");
+    var sensitiveSummary = sensitiveSection.querySelector("[data-sensitive-summary]");
 
     var setSensitiveStatus = function (text, ok) {
       if (!sensitiveStatus) return;
@@ -999,51 +999,57 @@
         "editor__status" + (text ? (ok ? " editor__status--ok" : " editor__status--error") : "");
     };
 
-    if (sensitiveFile) {
-      sensitiveFile.addEventListener("change", function () {
-        var file = sensitiveFile.files && sensitiveFile.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function () {
-          if (sensitiveText) sensitiveText.value = String(reader.result || "");
-          setSensitiveStatus("已读取 " + file.name + "，确认内容后点保存", true);
-        };
-        reader.onerror = function () {
-          setSensitiveStatus("读取文件失败，请确认是 UTF-8 文本", false);
-        };
-        reader.readAsText(file, "utf-8");
-      });
-    }
+    // 摘要由服务端渲染好（含分类分布），前端只负责替换，不自己拼文案
+    var applySensitiveSummary = function (data) {
+      if (!sensitiveSummary || !data || typeof data.summary !== "string") return;
+      sensitiveSummary.textContent = data.summary;
+    };
 
-    if (sensitiveSave) {
-      sensitiveSave.addEventListener("click", function () {
-        var text = sensitiveText ? sensitiveText.value : "";
-        sensitiveSave.disabled = true;
-        setSensitiveStatus("保存中……", true);
+    var uploadSensitive = function (file) {
+      if (!file) return;
+      if (!/\.txt$/i.test(file.name)) {
+        setSensitiveStatus("只支持 .txt 文件", false);
+        return;
+      }
+      var reader = new FileReader();
+      reader.onerror = function () {
+        setSensitiveStatus("读取文件失败，请确认是 UTF-8 文本", false);
+      };
+      reader.onload = function () {
+        if (sensitiveUpload) sensitiveUpload.disabled = true;
+        setSensitiveStatus("上传中……", true);
         api("/api/admin/sensitive-words", {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text: text })
+          body: JSON.stringify({ text: String(reader.result || "") })
         })
           .then(function (result) {
             if (result.ok && result.data && result.data.ok) {
-              var data = result.data;
+              applySensitiveSummary(result.data);
               var extra =
-                data.truncated > 0 ? "；超出上限 " + data.truncated + " 个词未保存" : "";
-              setSensitiveStatus("已保存 " + data.total + " 个词" + extra, true);
-              setTimeout(function () {
-                window.location.reload();
-              }, 900);
+                result.data.truncated > 0 ? "；超出上限 " + result.data.truncated + " 个词未保存" : "";
+              setSensitiveStatus("已覆盖词表：" + result.data.total + " 个词" + extra, true);
             } else {
-              setSensitiveStatus("保存失败，请稍后再试", false);
+              setSensitiveStatus("上传失败，请稍后再试", false);
             }
           })
           .catch(function () {
             setSensitiveStatus("网络异常，请稍后再试", false);
           })
           .then(function () {
-            sensitiveSave.disabled = false;
+            if (sensitiveUpload) sensitiveUpload.disabled = false;
+            if (sensitiveFile) sensitiveFile.value = "";
           });
+      };
+      reader.readAsText(file, "utf-8");
+    };
+
+    if (sensitiveUpload && sensitiveFile) {
+      sensitiveUpload.addEventListener("click", function () {
+        sensitiveFile.click();
+      });
+      sensitiveFile.addEventListener("change", function () {
+        uploadSensitive(sensitiveFile.files && sensitiveFile.files[0]);
       });
     }
 
@@ -1053,10 +1059,8 @@
         api("/api/admin/sensitive-words", { method: "DELETE" })
           .then(function (result) {
             if (result.ok) {
+              applySensitiveSummary(result.data);
               setSensitiveStatus("词表已清空", true);
-              setTimeout(function () {
-                window.location.reload();
-              }, 700);
             } else {
               setSensitiveStatus("清空失败，请稍后再试", false);
             }

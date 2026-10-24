@@ -6,6 +6,7 @@ import {
   normalizeForMatch,
   parseSensitiveWordList,
 } from "../src/lib/sensitive-words";
+import { formatSensitiveWordExport } from "../src/services/sensitive-words";
 
 describe("normalizeForMatch", () => {
   it("去掉空白、标点与符号", () => {
@@ -73,5 +74,26 @@ describe("categoryLabel", () => {
     expect(categoryLabel("porn", "zh")).toBe("色情");
     expect(categoryLabel("porn", "en")).toBe("Porn");
     expect(categoryLabel("unknown", "zh")).toBe("未分类");
+  });
+});
+
+describe("formatSensitiveWordExport", () => {
+  it("按分类分组、带 # 声明，且能原样再上传", () => {
+    const text = formatSensitiveWordExport([
+      { word: "词a", category: "porn", source: "词A" },
+      { word: "词b", category: "political", source: "词B" },
+      { word: "词c", category: "other", source: null },
+    ]);
+    expect(text).toContain("# 政治\n词B");
+    expect(text).toContain("# 色情\n词A");
+    expect(text).toContain("# 其他\n词c");
+    // 再跑一次解析，得到同一批词 —— 下载 → 改 → 上传 的闭环不丢词
+    const parsed = parseSensitiveWordList(text);
+    expect(parsed.entries.map((entry) => entry.word).sort()).toEqual(["词a", "词b", "词c"]);
+    expect(parsed.skipped).toBe(0);
+  });
+
+  it("空表导出空串", () => {
+    expect(formatSensitiveWordExport([])).toBe("");
   });
 });

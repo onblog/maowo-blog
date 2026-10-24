@@ -27,12 +27,14 @@ import {
   setStatus,
 } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
-import { parseSensitiveWordList } from "../lib/sensitive-words";
+import { categoryLabel, parseSensitiveWordList } from "../lib/sensitive-words";
 import {
   clearSensitiveWords,
+  exportSensitiveWords,
   replaceSensitiveWords,
   scanComment,
   sensitiveWordStats,
+  type SensitiveWordStats,
 } from "../services/sensitive-words";
 import { renderMarkdown } from "../lib/markdown";
 import { getSite, updateSite } from "../services/site";
@@ -359,10 +361,22 @@ api.delete("/admin/comments/:id", requireAdminApi, async (c) => {
 //
 // 词表整份覆盖：上传的 txt 就是「当前全部词」，支持删词。空文件等于停用。
 // 词表不进仓库（见 migrations/0009 的说明），所以这里也是唯一的维护入口。
+// 后台界面只做「上传 / 下载 / 清空」三件事，**不展示词表内容** —— 它不是给人读的。
+
+/** 后台展示用的摘要文案：条数 + 分类分布，空表时给「上传即启用」的引导。 */
+const sensitiveSummary = (stats: SensitiveWordStats, locale: Locale): string =>
+  stats.total === 0
+    ? t(locale, "admin.sensitive.empty")
+    : t(locale, "admin.sensitive.summary", {
+        n: stats.total,
+        cats: stats.categories
+          .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
+          .join(" · "),
+      });
 
 api.get("/admin/sensitive-words", requireAdminApi, async (c) => {
   const stats = await sensitiveWordStats(c.env);
-  return c.json({ ok: true, ...stats });
+  return c.json({ ok: true, ...stats, summary: sensitiveSummary(stats, c.get("locale")) });
 });
 
 api.put("/admin/sensitive-words", requireAdminApi, async (c) => {
@@ -379,18 +393,37 @@ api.put("/admin/sensitive-words", requireAdminApi, async (c) => {
       truncated: parsed.truncated,
     }),
   );
+  // 重新查一次统计再回给前端，避免「前端自己算」把分类分布算漂
+  const stats = await sensitiveWordStats(c.env);
   return c.json({
     ok: true,
     total: parsed.entries.length,
     skipped: parsed.skipped,
     truncated: parsed.truncated,
     limit: parsed.entries.length + parsed.truncated,
+    summary: sensitiveSummary(stats, c.get("locale")),
+  });
+});
+
+/**
+ * 下载当前词表：与上传格式一致（`# 分类` + 每行一个词），下载后可直接再上传覆盖。
+ * 用 cookie 鉴权（浏览器点链接会自带），不走 JSON 包装。
+ */
+api.get("/admin/sensitive-words/export", requireAdminApi, async (c) => {
+  const text = await exportSensitiveWords(c.env);
+  return new Response(text, {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "content-disposition": 'attachment; filename="sensitive-words.txt"',
+      "cache-control": "no-store",
+    },
   });
 });
 
 api.delete("/admin/sensitive-words", requireAdminApi, async (c) => {
   await clearSensitiveWords(c.env);
-  return c.json({ ok: true });
+  const stats = await sensitiveWordStats(c.env);
+  return c.json({ ok: true, ...stats, summary: sensitiveSummary(stats, c.get("locale")) });
 });
 
 // ── 后台：站点设置 ──────────────────────────────────────────────────────────

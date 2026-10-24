@@ -14,7 +14,7 @@
  *
  * 代价是每次检测按词表行数计 D1 读行数，所以上传上限压到 5000 词（见 `SENSITIVE_WORD_LIMIT`）。
  */
-import { normalizeForMatch, type SensitiveWordEntry } from "../lib/sensitive-words";
+import { SENSITIVE_CATEGORIES, normalizeForMatch, type SensitiveWordEntry } from "../lib/sensitive-words";
 
 export type ScanResult =
   | { hit: false }
@@ -83,4 +83,38 @@ export async function replaceSensitiveWords(env: Env, entries: SensitiveWordEntr
 /** 清空词表（后台「停用」按钮）：之后所有评论都不再被词表拦截。 */
 export async function clearSensitiveWords(env: Env): Promise<void> {
   await env.DB.prepare("DELETE FROM sensitive_words").run();
+}
+
+/**
+ * 导出当前词表：按分类分组、`# 分类名` 声明，**格式与上传完全一致**，下载后可直接再上传。
+ *
+ * 优先输出上传时的原始写法（`source`），因为它可读性更好、也避免把规范化后的词（去了
+ * 标点/全角）当成新词再传一遍；`source` 缺失时回落规范化后的 `word`。
+ */
+export async function exportSensitiveWords(env: Env): Promise<string> {
+  const { results } = await env.DB.prepare(
+    "SELECT word, category, source FROM sensitive_words ORDER BY category, word",
+  ).all<{ word: string; category: string; source: string | null }>();
+  return formatSensitiveWordExport(results);
+}
+
+/** 导出格式化（纯函数，便于单测）：按分类分组、`# 分类名` 声明，空行分隔。 */
+export function formatSensitiveWordExport(
+  rows: Array<{ word: string; category: string; source: string | null }>,
+): string {
+  const byCategory = new Map<string, string[]>();
+  for (const row of rows) {
+    const label = SENSITIVE_CATEGORIES.find((item) => item.key === row.category)?.zh ?? "其他";
+    const list = byCategory.get(label) ?? [];
+    list.push(row.source?.trim() || row.word);
+    byCategory.set(label, list);
+  }
+
+  const lines: string[] = [];
+  for (const category of SENSITIVE_CATEGORIES) {
+    const list = byCategory.get(category.zh);
+    if (!list || list.length === 0) continue;
+    lines.push(`# ${category.zh}`, ...list, "");
+  }
+  return lines.join("\n");
 }
