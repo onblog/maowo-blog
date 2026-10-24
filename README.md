@@ -158,6 +158,11 @@ curl -s https://YOUR_DOMAIN/robots.txt | grep Sitemap   # must show the producti
 `wrangler.jsonc` sets `keep_vars`, so a dashboard-managed variable survives later `wrangler deploy`
 runs — it only has to be set once.
 
+The site is served from a **custom domain only**: the config pins `workers_dev: false` and
+`preview_urls: false`. Without those lines wrangler enables `*.workers.dev` and preview URLs for you,
+which publishes a second entry point to the same content. The domain itself stays in the dashboard
+(Workers → Settings → Domains & Routes); no real domain is committed to this repo.
+
 The admin username and password are stored in D1 (`admin_credentials`, single row) and changed under
 `/admin/account` — not through environment variables. The default `admin` / `admin` must be replaced
 on first login.

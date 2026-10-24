@@ -21,6 +21,12 @@
   // 上配置的 SITE_URL（生产域名只在部署侧出现）。
   "keep_vars": true,
 
+  // 只接受自定义域名访问：关掉 `*.workers.dev` 与预览 URL。
+  // 不写这两行时 wrangler 会自动开启它们 —— 站点会多出一份公开入口，
+  // 同一份内容两个域名可访问（预览 URL 还会绕过自定义域的缓存与 WAF）。
+  "workers_dev": false,
+  "preview_urls": false,
+
   // 日志与跟踪：生产问题排查的第一手证据，默认全开。
   "observability": {
     "enabled": true,

@@ -148,6 +148,10 @@ curl -s https://你的域名/robots.txt | grep Sitemap   # 应为线上域名
 `wrangler.jsonc` 开了 `keep_vars`：Dashboard 上设的变量不会被 `wrangler deploy` 覆盖或删除，
 所以只需设这一次。
 
+站点**只走自定义域名**：`wrangler.jsonc` 里写死了 `workers_dev: false` 与 `preview_urls: false`。
+不写这两行时 wrangler 会自动开启 `*.workers.dev` 和预览 URL，同一份内容就多出两个公开入口。
+域名本身仍在 Dashboard → Worker → Settings → Domains & Routes 维护（仓库里不出现真实域名）。
+
 后台账号密码存在 D1（`admin_credentials` 单行表），在 `/admin/account` 页修改，不再走环境变量。
 默认的 `admin` / `admin` 第一次登录必须换掉。
 
