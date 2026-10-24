@@ -5,17 +5,39 @@ import type { CommentNode, CommentRow, ReaderUser } from "../types";
 export const COMMENT_COOLDOWN_SECONDS = 10;
 
 /**
+ * 每个 GitHub 账号每天（UTC）最多能发表的评论条数。
+ *
+ * 与 toolstack 保持同一口径：**被隐藏/待审核的也算**，否则只要内容被拦就不计数，
+ * 刷屏者可以无限重试。这是账号维度真正的闸门 —— 全站上限只防「大量账号协同刷」。
+ */
+export const DAILY_COMMENT_LIMIT_PER_USER = 10;
+
+/**
  * 全站每天最多接受的评论条数。
  * 单人博客一天几十条评论已属异常，100 是防脚本刷屏的兜底；正常写作远到不了。
  */
 export const DAILY_COMMENT_LIMIT = 100;
 
-/** 今天（UTC）已收到的评论条数，用于每日上限判断 */
+/** 今天（UTC）已收到的评论条数，用于全站上限判断 */
 export async function countToday(env: Env): Promise<number> {
   const start = new Date();
   start.setUTCHours(0, 0, 0, 0);
   const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE created_at >= ?")
     .bind(start.getTime())
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/**
+ * 今天（UTC）这个 GitHub 账号已发表多少条评论（所有状态都算）。
+ *
+ * 按 `github_id` 而不是 login：改名不会换一个额度桶。
+ */
+export async function countTodayByUser(env: Env, githubId: number): Promise<number> {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE github_id = ? AND created_at >= ?")
+    .bind(githubId, start.getTime())
     .first<{ n: number }>();
   return row?.n ?? 0;
 }

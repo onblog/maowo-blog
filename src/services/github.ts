@@ -3,13 +3,18 @@ import { withTimeout } from "../lib/html";
 /**
  * GitHub OAuth：评论者身份的唯一来源。
  *
- * 刻意只申请 `read:user`：
- *   - 不申请 `user:email` —— 评论不需要邮箱，站点也就不存邮箱，少一份隐私责任；
+ * 申请 `read:user user:email`：
+ *   - 读公开资料（login / 头像 / 昵称）用来展示；
+ *   - 读账号的邮箱列表，落库一份**已验证的 primary 邮箱**，只用于账号识别与站务联系，
+ *     不展示、不返回、日志不记录；
  *   - 不申请任何 repo 权限。
+ *
  * access_token 用完即弃，不落库。
  */
-export const GITHUB_SCOPE = "read:user";
+export const GITHUB_SCOPE = "read:user user:email";
 export const GITHUB_CALLBACK_PATH = "/api/auth/github/callback";
+/** 邮箱列表端点：需要 `user:email` scope，否则 404。 */
+const GITHUB_EMAILS_URL = "https://api.github.com/user/emails";
 
 const GITHUB_TIMEOUT_MS = 10_000;
 
@@ -124,4 +129,50 @@ export async function fetchGithubProfile(token: string): Promise<GithubProfile> 
     name: body.name?.trim() ? body.name.trim().slice(0, 40) : null,
     avatarUrl: body.avatar_url ?? null,
   };
+}
+
+/**
+ * 从 `/user/emails` 的响应里挑一个**可用的**邮箱。
+ *
+ * 三条规则，按优先级：
+ * 1. `primary && verified` —— GitHub 认定的主邮箱，且已验证；
+ * 2. 任意 `verified` —— 用户没把主邮箱标出来时的退路；
+ * 3. 都没有则返回 null。
+ *
+ * **`verified: false` 的地址一律不取**：未验证的邮箱只是用户随手填的字符串，
+ * 拿它当账号信息没有任何意义。
+ */
+export function readPrimaryEmail(payload: unknown): string | null {
+  if (!Array.isArray(payload)) return null;
+  const entries = payload.filter(
+    (entry): entry is { email: string; primary?: unknown; verified?: unknown } =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as { email?: unknown }).email === "string" &&
+      (entry as { email: string }).email !== "",
+  );
+  const verified = entries.filter((entry) => entry.verified === true);
+  const primary = verified.find((entry) => entry.primary === true);
+  return (primary ?? verified[0])?.email ?? null;
+}
+
+/**
+ * 取账号的 primary 邮箱。任何失败都返回 null —— 邮箱是**附加信息**，
+ * 拿不到不该让登录失败（用户可能在授权页取消勾选邮箱权限）。
+ */
+export async function fetchPrimaryEmail(token: string): Promise<string | null> {
+  const res = await withTimeout(
+    fetch(GITHUB_EMAILS_URL, {
+      headers: {
+        accept: "application/vnd.github+json",
+        authorization: `Bearer ${token}`,
+        "user-agent": "maowo-blog",
+        "x-github-api-version": "2022-11-28",
+      },
+    }),
+    GITHUB_TIMEOUT_MS,
+    "读取 GitHub 邮箱",
+  ).catch(() => null);
+  if (!res || !res.ok) return null;
+  return readPrimaryEmail(await res.json().catch(() => null));
 }

@@ -337,11 +337,13 @@
           var message =
             error === "too_fast"
               ? "发得有点快，歇一会儿再来～"
-              : error === "daily_limit"
-                ? "今天的评论已经到上限啦，明天再来吧～"
-                : error === "unauthorized"
-                  ? "登录已过期，请重新登录"
-                  : "发表失败，请稍后再试";
+              : error === "user_daily_limit"
+                ? "今天的评论次数用完啦，明天再来吧～"
+                : error === "daily_limit"
+                  ? "今天的评论已经到上限啦，明天再来吧～"
+                  : error === "unauthorized"
+                    ? "登录已过期，请重新登录"
+                    : "发表失败，请稍后再试";
           setStatus(message, "error");
           if (submitBtn) {
             submitBtn.disabled = false;

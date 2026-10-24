@@ -13,8 +13,10 @@ import {
   buildAuthorizeUrl,
   exchangeCodeForToken,
   fetchGithubProfile,
+  fetchPrimaryEmail,
   githubErrorMessage,
 } from "../services/github";
+import { upsertGithubUser } from "../services/users";
 import type { AppEnv, ReaderUser } from "../types";
 
 /**
@@ -81,7 +83,18 @@ authRoutes.get("/github/callback", async (c) => {
 
   try {
     const token = await exchangeCodeForToken(c.env, code);
-    const profile = await fetchGithubProfile(token);
+    // 邮箱是附加信息：拿不到（用户取消授权 / 接口失败）只落 null，不影响登录。
+    // 与 GitHub 资料并行请求，省一次往返；资料失败会抛错，登录照常失败。
+    const [profile, email] = await Promise.all([fetchGithubProfile(token), fetchPrimaryEmail(token)]);
+    // 身份真源落库：upsert 失败说明库有问题，登录应当失败，而不是发一个没有账号依据的会话。
+    // 每人每日评论上限按这里的 github_id 统计。
+    await upsertGithubUser(c.env, {
+      githubId: profile.id,
+      login: profile.login,
+      email,
+      avatarUrl: profile.avatarUrl,
+      now: Date.now(),
+    });
     const reader: ReaderUser = {
       githubId: profile.id,
       login: profile.login,

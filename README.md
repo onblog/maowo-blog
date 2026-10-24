@@ -36,7 +36,7 @@ it is a product, not a file you own. Maowo Blog sits in between:
 | Hosting | VPS + DB | static host | **Cloudflare Workers (free tier)** |
 | Comments | plugin zoo | third-party widget | **built-in, GitHub login** |
 | Author accounts | multi-user CMS | n/a | **personal blog — no accounts** |
-| Reader data | cookies, trackers | none | **none — no email stored** |
+| Reader data | cookies, trackers | none | **no cookies, no trackers; only GitHub identity + verified email for account identification** |
 | Cost | ~$5–20/mo | $0 | **$0 for most blogs** |
 
 It is deliberately **not** a multi-user CMS: one person, one blog, no roles, no permission matrix, no plugin marketplace.
@@ -52,8 +52,11 @@ That is the feature.
 - **Cute by shell, serious by content.** Rounded cards, a hand-drawn cat mascot, and a reading layout tuned for Chinese
   and Latin text alike. One look, done properly — no theme marketplace to configure.
 - **Light and dark**, decided before first paint (inline script), following the system until the reader chooses.
-- **Comments with GitHub login.** Only `read:user` is requested. **No email is stored.** Optional "your blog URL" field
-  keeps the independent-blog web-ring culture (comment → return visit → backlink).
+- **Comments with GitHub login.** `read:user user:email` is requested: the GitHub identity (`github_id`, login, avatar)
+  and the account's **verified primary email** are stored in the `users` table — the email is used only for account
+  identification and site-operator contact (never shown, never returned by an API, never logged). Each account is
+  limited to **10 comments per UTC day**, on top of a site-wide daily cap that stops scripted floods. Optional
+  "your blog URL" field keeps the independent-blog web-ring culture (comment → return visit → backlink).
 - **Agent-ready API.** `/admin/migrate` shows one copy-pasteable prompt; Codex / Claude / WorkBuddy then write,
   publish and migrate posts through the same `/api/admin/*` endpoints the UI uses — no second protocol.
 - **One-click export**: the whole site as JSON. Moving in must not mean being locked in.
@@ -183,7 +186,9 @@ tests/                    unit tests (vitest)
 
 **Is Cloudflare required?** Yes, the runtime is Workers with D1 and R2 bindings.
 
-**AI?** An optional Workers AI binding is declared for future comment moderation; with no binding, nothing breaks.
+**AI?** Not used for comment moderation — GitHub login (real identities) plus 10 comments per account per day and a
+site-wide daily cap are enough. An optional Workers AI binding stays declared for your own extensions; without it,
+nothing breaks.
 
 ## License
 

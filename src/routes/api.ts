@@ -15,7 +15,17 @@ import { createSession, deleteSession, pruneExpiredSessions } from "../lib/sessi
 import { clearAdminCookie, setAdminCookie } from "../lib/session-cookie";
 import { requireAdminApi } from "../middleware/guards";
 import { deleteAdminSessions, updateAdminCredentials, verifyAdminPassword } from "../services/admin";
-import { COMMENT_COOLDOWN_SECONDS, DAILY_COMMENT_LIMIT, countToday, createComment, lastCommentAt, remove, setStatus } from "../services/comments";
+import {
+  COMMENT_COOLDOWN_SECONDS,
+  DAILY_COMMENT_LIMIT,
+  DAILY_COMMENT_LIMIT_PER_USER,
+  countToday,
+  countTodayByUser,
+  createComment,
+  lastCommentAt,
+  remove,
+  setStatus,
+} from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
 import { renderMarkdown } from "../lib/markdown";
 import { getSite, updateSite } from "../services/site";
@@ -87,6 +97,16 @@ api.post("/comments", async (c) => {
   const todayCount = await countToday(c.env);
   if (todayCount >= DAILY_COMMENT_LIMIT) {
     return c.json({ error: "daily_limit", limit: DAILY_COMMENT_LIMIT, count: todayCount }, 429);
+  }
+
+  // 账号每日上限：真正的闸门。GitHub 登录保证「有人」而不是匿名，再给每人的额度封顶，
+  // 一个人注册再多小号也受全站上限兜底。统计按 github_id，改名不换额度桶。
+  const userToday = await countTodayByUser(c.env, reader.githubId);
+  if (userToday >= DAILY_COMMENT_LIMIT_PER_USER) {
+    return c.json(
+      { error: "user_daily_limit", limit: DAILY_COMMENT_LIMIT_PER_USER, count: userToday },
+      429,
+    );
   }
 
   const website = body.website ? safeUrl(body.website) : null;
