@@ -27,7 +27,7 @@ import {
   setStatus,
 } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
-import { categoryLabel, parseSensitiveWordList } from "../lib/sensitive-words";
+import { parseSensitiveWordList, sensitiveSummaryText } from "../lib/sensitive-words";
 import {
   clearSensitiveWords,
   exportSensitiveWords,
@@ -363,20 +363,9 @@ api.delete("/admin/comments/:id", requireAdminApi, async (c) => {
 // 词表不进仓库（见 migrations/0009 的说明），所以这里也是唯一的维护入口。
 // 后台界面只做「上传 / 下载 / 清空」三件事，**不展示词表内容** —— 它不是给人读的。
 
-/** 后台展示用的摘要文案：条数 + 分类分布，空表时给「上传即启用」的引导。 */
-const sensitiveSummary = (stats: SensitiveWordStats, locale: Locale): string =>
-  stats.total === 0
-    ? t(locale, "admin.sensitive.empty")
-    : t(locale, "admin.sensitive.summary", {
-        n: stats.total,
-        cats: stats.categories
-          .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
-          .join(" · "),
-      });
-
 api.get("/admin/sensitive-words", requireAdminApi, async (c) => {
   const stats = await sensitiveWordStats(c.env);
-  return c.json({ ok: true, ...stats, summary: sensitiveSummary(stats, c.get("locale")) });
+  return c.json({ ok: true, ...stats, summary: sensitiveSummaryText(c.get("locale"), stats) });
 });
 
 api.put("/admin/sensitive-words", requireAdminApi, async (c) => {
@@ -401,7 +390,7 @@ api.put("/admin/sensitive-words", requireAdminApi, async (c) => {
     skipped: parsed.skipped,
     truncated: parsed.truncated,
     limit: parsed.entries.length + parsed.truncated,
-    summary: sensitiveSummary(stats, c.get("locale")),
+    summary: sensitiveSummaryText(c.get("locale"), stats),
   });
 });
 
@@ -423,7 +412,7 @@ api.get("/admin/sensitive-words/export", requireAdminApi, async (c) => {
 api.delete("/admin/sensitive-words", requireAdminApi, async (c) => {
   await clearSensitiveWords(c.env);
   const stats = await sensitiveWordStats(c.env);
-  return c.json({ ok: true, ...stats, summary: sensitiveSummary(stats, c.get("locale")) });
+  return c.json({ ok: true, ...stats, summary: sensitiveSummaryText(c.get("locale"), stats) });
 });
 
 // ── 后台：站点设置 ──────────────────────────────────────────────────────────

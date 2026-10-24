@@ -2511,16 +2511,59 @@ a.post-nav__item:hover {
   gap: 16px;
   max-width: 860px;
 }
-/* 评论敏感词：只做上传 / 下载 / 清空三个动作，不展示词表内容。
+/* 评论敏感词：入口在 /admin/comments 右上角，点开是原生 <dialog>。
+   只做上传 / 下载 / 清空三个动作，不展示词表内容。
    原生 file 控件被 hidden 隐藏，由主按钮触发 —— 不用浏览器默认样式。 */
-.sensitive-panel__head {
+.sensitive-dialog {
+  border: 2px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: calc(100% - 40px);
+  max-width: 560px;
+  box-shadow: var(--shadow-float);
+}
+.sensitive-dialog::backdrop {
+  background: rgb(20 18 16 / 45%);
+  backdrop-filter: blur(2px);
+}
+.sensitive-dialog__body {
   display: grid;
-  gap: 4px;
+  gap: 16px;
+  padding: 24px;
 }
-.sensitive-panel__head .admin-title {
+.sensitive-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  /* 摘要紧贴标题，两者共同构成弹窗头部 */
+  margin-bottom: -8px;
+}
+.sensitive-dialog__title {
   margin: 0;
+  font-size: 18px;
+  font-weight: 800;
 }
-.sensitive-panel__head .muted {
+/* 关闭按钮：和图表源码切换按钮同一套「小方块图标按钮」语言 */
+.sensitive-dialog__close {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+.sensitive-dialog__close:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+.sensitive-dialog__summary {
   margin: 0;
   font-size: 13.5px;
 }

@@ -10,6 +10,9 @@
  *    分类只用于后台统计与排查，判定是「命中任意一类即拦」。
  */
 
+import type { Locale } from "../types";
+import { t } from "./i18n";
+
 /** 分类：key 落库，zh/en 给后台展示。只用于统计，判定不区分。 */
 export const SENSITIVE_CATEGORIES = [
   { key: "political", zh: "政治", en: "Political" },
@@ -133,3 +136,20 @@ export const categoryLabel = (key: string, locale: "zh" | "en"): string => {
   if (!found) return locale === "zh" ? "未分类" : "Other";
   return locale === "zh" ? found.zh : found.en;
 };
+
+/**
+ * 后台展示用的摘要文案：条数 + 分类分布，空表时给「上传即启用」的引导。
+ *
+ * 后台评论页（SSR）与 `GET /api/admin/sensitive-words`（上传/清空后回填）用的是同一句，
+ * 所以文案只在 i18n 里写一次，格式化也只在里做一次 —— 否则两边各拼一套，早晚拼出两种句子。
+ */
+export function sensitiveSummaryText(
+  locale: Locale,
+  stats: { total: number; categories: Array<{ category: string; count: number }> },
+): string {
+  if (stats.total === 0) return t(locale, "admin.sensitive.empty");
+  return t(locale, "admin.sensitive.summary", {
+    n: stats.total,
+    cats: stats.categories.map((item) => `${categoryLabel(item.category, locale)} ${item.count}`).join(" · "),
+  });
+}

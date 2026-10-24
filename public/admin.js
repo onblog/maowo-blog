@@ -984,8 +984,11 @@
   // ── 后台：评论敏感词 ─────────────────────────────────────────────────
   // 只做三件事：上传（整份覆盖）、下载（纯链接，无需脚本）、清空。
   // **不展示词表内容** —— 它不是给人读的；要改就下载、改完再上传。
+  // 入口在 /admin/comments 右上角，点开是原生 <dialog>：Esc / 点遮罩 / 关闭按钮都能收起。
   var sensitiveSection = document.querySelector("[data-sensitive-words]");
   if (sensitiveSection) {
+    var sensitiveDialog = document.querySelector("[data-sensitive-dialog]");
+    var sensitiveOpen = document.querySelector("[data-sensitive-open]");
     var sensitiveFile = sensitiveSection.querySelector("[data-sensitive-file]");
     var sensitiveUpload = sensitiveSection.querySelector("[data-sensitive-upload]");
     var sensitiveClear = sensitiveSection.querySelector("[data-sensitive-clear]");
@@ -998,6 +1001,25 @@
       sensitiveStatus.className =
         "editor__status" + (text ? (ok ? " editor__status--ok" : " editor__status--error") : "");
     };
+
+    if (sensitiveDialog && typeof sensitiveDialog.showModal === "function") {
+      if (sensitiveOpen) {
+        sensitiveOpen.addEventListener("click", function () {
+          // 每次打开都清掉上一次的残留状态，否则半小时前的"上传成功"还挂在弹窗里
+          setSensitiveStatus("", true);
+          sensitiveDialog.showModal();
+        });
+      }
+      sensitiveDialog.querySelectorAll("[data-sensitive-close]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          sensitiveDialog.close();
+        });
+      });
+      // 点遮罩关闭：dialog 自身铺满视口，点到的 target 是它本体而不是内容区
+      sensitiveDialog.addEventListener("click", function (event) {
+        if (event.target === sensitiveDialog) sensitiveDialog.close();
+      });
+    }
 
     // 摘要由服务端渲染好（含分类分布），前端只负责替换，不自己拼文案
     var applySensitiveSummary = function (data) {

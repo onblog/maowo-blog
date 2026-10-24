@@ -1,7 +1,7 @@
 import type { Child } from "hono/jsx";
 import type { AdminUser, CommentRow, Locale, PostRow, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
-import { categoryLabel } from "../lib/sensitive-words";
+import { sensitiveSummaryText } from "../lib/sensitive-words";
 import { Mascot, MoonIcon, siteName, SunIcon } from "./layout";
 import { THEME_BOOT_SCRIPT } from "../lib/theme";
 import { ASSET_VERSION } from "../lib/brand";
@@ -440,16 +440,28 @@ export function AdminCommentsPage({
   colorMode,
   admin,
   comments,
+  sensitiveWords,
 }: {
   site: SiteRow;
   locale: Locale;
   colorMode: ColorMode;
   admin: AdminUser;
   comments: Array<CommentRow & { post_title: string | null; post_slug: string | null }>;
+  sensitiveWords: SensitiveWordStats;
 }) {
   return (
     <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="comments">
-      <h1 class="admin-title">{t(locale, "admin.comments.title")}</h1>
+      <div class="admin-section-head">
+        <h1 class="admin-title">{t(locale, "admin.comments.title")}</h1>
+        {/*
+          敏感词是评论的配套设置，放在这个页面的右上角，而不是散在「设置」里：
+          维护词表的人此刻正看着评论，入口和它管的东西在同一个屏幕上。
+          点开是弹窗，看完就关，不占列表空间。
+        */}
+        <button class="btn" type="button" data-sensitive-open>
+          {t(locale, "admin.sensitive.open")}
+        </button>
+      </div>
       {comments.length === 0 ? (
         <p class="muted">{t(locale, "admin.comments.empty")}</p>
       ) : (
@@ -483,6 +495,48 @@ export function AdminCommentsPage({
           ))}
         </ul>
       )}
+
+      {/*
+        评论敏感词：整份覆盖式维护。词表不进仓库（政治/色情词不适合公开分发），
+        所以这里是唯一的维护入口；上传即覆盖、立即生效，命中即拒绝评论。
+        刻意**不展示词表内容**：它不是给人读的，也不需要在这里编辑 ——
+        要改就下载、改完再上传覆盖。所以弹窗里只有统计 + 三个动作。
+      */}
+      <dialog class="sensitive-dialog" data-sensitive-dialog>
+        <div class="sensitive-dialog__body" data-sensitive-words>
+          <div class="sensitive-dialog__head">
+            <h2 class="sensitive-dialog__title">{t(locale, "admin.sensitive.title")}</h2>
+            <button
+              class="sensitive-dialog__close"
+              type="button"
+              data-sensitive-close
+              title={t(locale, "admin.sensitive.close")}
+              aria-label={t(locale, "admin.sensitive.close")}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+          <p class="muted sensitive-dialog__summary" data-sensitive-summary>
+            {sensitiveSummaryText(locale, sensitiveWords)}
+          </p>
+          <div class="sensitive-panel__actions">
+            <input type="file" accept=".txt,text/plain" data-sensitive-file hidden />
+            <button class="btn btn--primary" type="button" data-sensitive-upload>
+              {t(locale, "admin.sensitive.upload")}
+            </button>
+            <a class="btn btn--ghost" href="/api/admin/sensitive-words/export" download="sensitive-words.txt">
+              {t(locale, "admin.sensitive.download")}
+            </a>
+            <button class="btn btn--ghost" type="button" data-sensitive-clear>
+              {t(locale, "admin.sensitive.clear")}
+            </button>
+            <p class="editor__status" data-sensitive-status />
+          </div>
+          <p class="muted sensitive-panel__hint">{t(locale, "admin.sensitive.hint")}</p>
+        </div>
+      </dialog>
     </AdminShell>
   );
 }
@@ -558,13 +612,11 @@ export function AdminSettingsPage({
   locale,
   colorMode,
   admin,
-  sensitiveWords,
 }: {
   site: SiteRow;
   locale: Locale;
   colorMode: ColorMode;
   admin: AdminUser;
-  sensitiveWords: SensitiveWordStats;
 }) {
   return (
     <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="settings">
@@ -657,42 +709,6 @@ export function AdminSettingsPage({
           </button>
         </div>
       </form>
-
-      {/*
-        评论敏感词：整份覆盖式维护。词表不进仓库（政治/色情词不适合公开分发），
-        所以这里是唯一的维护入口；上传即覆盖、立即生效，命中即拒绝评论。
-        刻意**不展示词表内容**：它不是给人读的，也不需要在这里编辑 ——
-        要改就下载、改完再上传覆盖。
-      */}
-      <section class="admin-form sensitive-panel" data-sensitive-words>
-        <div class="sensitive-panel__head">
-          <h2 class="admin-title admin-title--sub">{t(locale, "admin.sensitive.title")}</h2>
-          <p class="muted" data-sensitive-summary>
-            {sensitiveWords.total > 0
-              ? t(locale, "admin.sensitive.summary", {
-                  n: sensitiveWords.total,
-                  cats: sensitiveWords.categories
-                    .map((item) => `${categoryLabel(item.category, locale)} ${item.count}`)
-                    .join(" · "),
-                })
-              : t(locale, "admin.sensitive.empty")}
-          </p>
-        </div>
-        <div class="sensitive-panel__actions">
-          <input type="file" accept=".txt,text/plain" data-sensitive-file hidden />
-          <button class="btn btn--primary" type="button" data-sensitive-upload>
-            {t(locale, "admin.sensitive.upload")}
-          </button>
-          <a class="btn btn--ghost" href="/api/admin/sensitive-words/export" download="sensitive-words.txt">
-            {t(locale, "admin.sensitive.download")}
-          </a>
-          <button class="btn btn--ghost" type="button" data-sensitive-clear>
-            {t(locale, "admin.sensitive.clear")}
-          </button>
-          <p class="editor__status" data-sensitive-status />
-        </div>
-        <p class="muted sensitive-panel__hint">{t(locale, "admin.sensitive.hint")}</p>
-      </section>
 
       <dialog class="link-dialog" data-link-dialog>
         <form method="dialog" class="link-dialog__form" data-link-form>

@@ -101,17 +101,22 @@ adminPages.get("/comments", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
   const comments = await listAll(c.env, 200);
-  return c.html(<AdminCommentsPage {...base(c)} admin={c.get("admin")!} comments={comments} />);
+  // 敏感词统计跟着评论页 SSR：弹窗里要显示「当前几词、分几类」，不必等打开再请求
+  const sensitiveWords = await sensitiveWordStats(c.env);
+  return c.html(
+    <AdminCommentsPage
+      {...base(c)}
+      admin={c.get("admin")!}
+      comments={comments}
+      sensitiveWords={sensitiveWords}
+    />,
+  );
 });
 
 adminPages.get("/settings", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
-  // 敏感词统计与站点设置一起 SSR：后台设置页要显示「当前几词、分几类」
-  const sensitiveWords = await sensitiveWordStats(c.env);
-  return c.html(
-    <AdminSettingsPage {...base(c)} admin={c.get("admin")!} sensitiveWords={sensitiveWords} />,
-  );
+  return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} />);
 });
 
 adminPages.get("/account", async (c) => {
