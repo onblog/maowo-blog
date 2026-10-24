@@ -79,6 +79,16 @@ describe("Markdown 渲染", () => {
     expect(text).not.toContain("const a");
     expect(text).not.toContain("|");
   });
+
+  it("```mermaid 输出图卡占位，而不是代码块", () => {
+    const html = renderMarkdown("```mermaid\nsequenceDiagram\n  A->>B: hi\n```");
+    // 前端靠 data-mermaid + pre.mermaid 找节点；套上代码块外壳就再也不会被渲染
+    expect(html).toContain('<figure class="diagram" data-mermaid>');
+    expect(html).toContain('<pre class="mermaid">');
+    expect(html).not.toContain("code-block__lang");
+    // 源码照样转义：正文写不进可执行 HTML
+    expect(renderMarkdown("```mermaid\ngraph TD\nA[\"<img src=x>\"]\n```")).not.toContain("<img src=x>");
+  });
 });
 
 describe("博主身份识别", () => {

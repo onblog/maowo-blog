@@ -118,6 +118,12 @@ duration and failure logs) or `npx wrangler versions list --name maowo-blog | gr
 Do **not** use `wrangler deployments list`: it only reflects deployments it created itself, so a
 Workers Builds deploy leaves it looking unchanged.
 
+`pnpm deploy` and Workers Builds both end up in `wrangler deploy`, which runs the `build.command` in
+`wrangler.jsonc` first. That command bundles Mermaid into `public/vendor/mermaid.min.js` — a generated
+file (3 MB, git-ignored) that has to exist **before** the static assets are uploaded. Losing it is not
+loud: every diagram silently degrades into a code block, so the bundle is built on every deploy rather
+than by hand. If you ever need it on its own, run `pnpm build` (same command).
+
 Then open `/admin`, sign in with `admin` / `admin`, change the credentials when asked, and write your
 first post.
 

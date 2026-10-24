@@ -10,28 +10,28 @@
   },
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "pnpm build:mermaid && wrangler deploy --env production",
+    "build": "node scripts/build-mermaid.mjs",
+    "deploy": "wrangler deploy --env production",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm cf-typegen && pnpm typecheck && pnpm build:mermaid && pnpm test",
+    "check": "pnpm cf-typegen && pnpm typecheck && pnpm build && node scripts/check-deploy.mjs && pnpm test",
     "db:migrate:local": "wrangler d1 migrations apply miao-blog-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply miao-blog-db --remote",
-    "db:exec:local": "wrangler d1 execute miao-blog-db --local --command",
-    "build:mermaid": "node scripts/build-mermaid.mjs"
+    "db:exec:local": "wrangler d1 execute miao-blog-db --local --command"
   },
   "dependencies": {
+    "esbuild": "^0.25.12",
     "highlight.js": "^11.12.0",
     "hono": "^4.13.11",
     "markdown-it": "^15.0.2",
+    "mermaid": "^11.17.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@types/markdown-it": "^14.2.0",
-    "esbuild": "^0.25.12",
-    "mermaid": "^11.17.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11",
     "wrangler": "^4.144.0"

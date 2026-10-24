@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      esbuild:
+        specifier: ^0.25.12
+        version: 0.25.12
       highlight.js:
         specifier: ^11.12.0
         version: 11.12.0
@@ -17,6 +20,9 @@ importers:
       markdown-it:
         specifier: ^15.0.2
         version: 15.0.3
+      mermaid:
+        specifier: ^11.17.2
+        version: 11.17.2
       zod:
         specifier: ^4.6.5
         version: 4.6.7
@@ -27,12 +33,6 @@ importers:
       '@types/markdown-it':
         specifier: ^14.2.0
         version: 14.2.0
-      esbuild:
-        specifier: ^0.25.12
-        version: 0.25.12
-      mermaid:
-        specifier: ^11.17.2
-        version: 11.17.2
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

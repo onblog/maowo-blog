@@ -4,7 +4,8 @@ node_modules/
 *.log
 .DS_Store
 coverage/
-# mermaid 打包产物：由 pnpm build:mermaid 生成，不进仓库
+# mermaid 打包产物：由 pnpm build 生成（wrangler.jsonc 的 build.command 会在每次
+# deploy / dev 前自动跑一遍），不进仓库
 public/vendor/
 # 本地 curl / Cookie 导出文件：含线上后台 session token，绝不能进仓库
 ad.txt

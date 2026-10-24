@@ -112,6 +112,11 @@ push 到 `main` 后 Workers Builds 会自动构建并部署，一次大约 **1�
 **不要看 `wrangler deployments list`**：它只反映经它自己创建的部署，Workers Builds 的部署不会刷新这个
 列表，用它判断会得到「看起来没触发」的错觉。
 
+`pnpm deploy` 和 Workers Builds 最后都落到 `wrangler deploy`，而它开跑前会先执行 `wrangler.jsonc`
+里的 `build.command`：把 Mermaid 打包成 `public/vendor/mermaid.min.js`。这是个**生成物**（3 MB，不进
+仓库），但必须在上传静态资源之前就存在 —— 少了它的表现非常安静：每张图都退化成一个代码块，线上没人
+会发现。所以这件事交给每次部署自动做，而不是靠谁记得先跑一条命令。需要单独构建时用 `pnpm build`。
+
 打开 `/admin`，用 `admin` / `admin` 登录，按提示改掉账号密码，就可以写第一篇了。
 
 ### 环境变量

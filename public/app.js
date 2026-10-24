@@ -200,15 +200,31 @@
               .catch(function (err) {
                 fig.classList.add("diagram--error");
                 fig.classList.remove("diagram--ready");
-                fig.setAttribute("data-error", String((err && err.message) || err).slice(0, 160));
+                fig.setAttribute(
+                  "data-error",
+                  "图表渲染失败：" + String((err && err.message) || err).slice(0, 160)
+                );
               });
           });
         })
-        .catch(function () {
-          // 库加载失败：保留源码，至少不白屏
+        .catch(function (err) {
+          /*
+           * 库没加载到（部署时漏了 public/vendor 产物、或网络失败）。
+           * 这里**必须报错**，不能静默把源码当结果：静默降级的样子和"图就是这样"完全一样，
+           * 线上少一个 3 MB 静态文件没有任何人会发现。原因写进图卡，由 CSS 的
+           * `.diagram--error::after` 显示出来。
+           */
+          var reason = String((err && err.message) || err).slice(0, 120);
           diagrams.forEach(function (fig) {
-            fig.classList.add("diagram--static");
+            fig.classList.add("diagram--error");
+            fig.classList.remove("diagram--ready");
+            fig.setAttribute(
+              "data-error",
+              "图表库加载失败（" + reason + "）：/vendor/mermaid.min.js 没有随本次部署上传"
+            );
           });
+          // 允许重试：下次切到预览时会重新加载一次
+          mermaidPromise = null;
         });
     }
 
@@ -234,6 +250,8 @@
         button.innerHTML = iconSvg(showSource ? "preview" : "code");
         button.title = showSource ? "查看预览" : "查看源码";
         button.setAttribute("aria-pressed", showSource ? "true" : "false");
+        // 还没有图（加载失败或仍在渲染）：切回预览时顺手重试一次
+        if (!showSource && !svg) renderAll();
       });
     });
 

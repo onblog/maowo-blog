@@ -1134,12 +1134,12 @@ button {
   overflow-x: auto;
 }
 
-/* 渲染失败：把原因写在图卡里，而不是静默留一块空白 */
+/* 渲染失败：把原因写在图卡里，而不是静默留一块空白（文案由 app.js 写进 data-error） */
 .diagram--error {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--hairline));
 }
 .diagram--error::after {
-  content: "图表渲染失败：" attr(data-error);
+  content: attr(data-error);
   display: block;
   margin-top: 10px;
   font-size: 12.5px;

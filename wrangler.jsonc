@@ -5,6 +5,18 @@
   "compatibility_date": "2026-10-22",
   "compatibility_flags": ["nodejs_compat"],
 
+  // 静态资源里有一件**生成物**：public/vendor/mermaid.min.js（mermaid 图表库，见
+  // scripts/build-mermaid.mjs）。它不进仓库（3 MB 的第三方 bundle），但必须在
+  // `wrangler deploy` 上传静态资源**之前**就存在，否则线上 /vendor/mermaid.min.js 是 404，
+  // 图表退化成一段源码。
+  //
+  // 写在 build 里就等于把这件事交给所有部署路径统一处理：本地 `pnpm deploy`、
+  // 直接 `npx wrangler deploy --env production`、以及 Workers Builds 的自动部署，
+  // 都会先跑一遍这个命令。别把它挪回 npm script —— 手动步骤一定会被漏掉。
+  "build": {
+    "command": "node scripts/build-mermaid.mjs"
+  },
+
   // 变量由部署环境管理：不要用仓库里的默认值覆盖 Cloudflare Dashboard
   // 上配置的 SITE_URL（生产域名只在部署侧出现）。
   "keep_vars": true,
