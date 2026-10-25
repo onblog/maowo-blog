@@ -52,7 +52,6 @@ export function createSiteApp() {
         locale={ctx.get("locale")}
         colorMode={ctx.get("colorMode")}
         reader={ctx.get("reader")}
-        admin={ctx.get("admin")}
       />,
       404,
     );

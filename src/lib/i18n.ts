@@ -16,7 +16,6 @@ export const messages = {
     "nav.tags": "标签",
     "nav.about": "关于",
     "nav.links": "友链",
-    "nav.admin": "后台",
     "nav.rss": "订阅",
 
     "hero.greeting": "喵～ 欢迎来猫窝坐坐",
@@ -253,7 +252,6 @@ export const messages = {
     "nav.tags": "Tags",
     "nav.about": "About",
     "nav.links": "Links",
-    "nav.admin": "Admin",
     "nav.rss": "RSS",
 
     "hero.greeting": "Meow~ welcome to my little den",

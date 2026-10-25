@@ -1,4 +1,4 @@
-import type { AdminUser, Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
+import type { Locale, PostRow, PostSummary, ReaderUser, SiteRow, ColorMode } from "../types";
 import { t } from "../lib/i18n";
 import type { FriendLink } from "../services/site";
 import { Layout } from "./layout";
@@ -9,7 +9,6 @@ type BaseProps = {
   locale: Locale;
   colorMode: ColorMode;
   reader: ReaderUser | null;
-  admin: AdminUser | null;
 };
 
 export function ArchivePage({
@@ -17,7 +16,6 @@ export function ArchivePage({
   locale,
   colorMode,
   reader,
-  admin,
   groups,
   total,
 }: BaseProps & { groups: Array<{ year: string; posts: PostRow[] }>; total: number }) {
@@ -27,7 +25,6 @@ export function ArchivePage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "archive.title")}
       canonicalPath="/archive"
       activeNav="archive"
@@ -69,7 +66,6 @@ export function TagsPage({
   locale,
   colorMode,
   reader,
-  admin,
   tags,
 }: BaseProps & { tags: Array<{ slug: string; name: string; post_count?: number }> }) {
   return (
@@ -78,7 +74,6 @@ export function TagsPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "tags.title")}
       canonicalPath="/tags"
       activeNav="tags"
@@ -109,7 +104,6 @@ export function TagPage({
   locale,
   colorMode,
   reader,
-  admin,
   tagName,
   tagSlug,
   posts,
@@ -120,7 +114,6 @@ export function TagPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={`#${tagName}`}
       canonicalPath={`/tags/${encodeURIComponent(tagSlug)}`}
       activeNav="tags"
@@ -150,7 +143,6 @@ export function AboutPage({
   locale,
   colorMode,
   reader,
-  admin,
 }: BaseProps) {
   const bio = site.owner_bio;
   return (
@@ -159,7 +151,6 @@ export function AboutPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "about.title")}
       canonicalPath="/about"
       activeNav="about"
@@ -190,7 +181,6 @@ export function SeriesListPage({
   locale,
   colorMode,
   reader,
-  admin,
   series,
 }: BaseProps & {
   series: Array<{ slug: string; name: string; description: string | null; post_count: number }>;
@@ -201,7 +191,6 @@ export function SeriesListPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "series.title")}
       canonicalPath="/series"
       activeNav="series"
@@ -235,7 +224,6 @@ export function SeriesPage({
   locale,
   colorMode,
   reader,
-  admin,
   series,
   posts,
 }: BaseProps & {
@@ -248,7 +236,6 @@ export function SeriesPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={series.name}
       description={series.description ?? undefined}
       canonicalPath={`/series/${series.slug}`}
@@ -287,7 +274,6 @@ export function LinksPage({
   locale,
   colorMode,
   reader,
-  admin,
   links,
 }: BaseProps & { links: FriendLink[] }) {
   return (
@@ -296,7 +282,6 @@ export function LinksPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "links.title")}
       canonicalPath="/links"
       activeNav="links"
@@ -336,14 +321,13 @@ export function LinksPage({
   );
 }
 
-export function NotFoundPage({ site, locale, colorMode, reader, admin }: BaseProps) {
+export function NotFoundPage({ site, locale, colorMode, reader }: BaseProps) {
   return (
     <Layout
       site={site}
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={t(locale, "notfound.title")}
       activeNav={undefined}
     >

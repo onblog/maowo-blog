@@ -25,7 +25,6 @@ export function HomePage({ site, locale, colorMode, reader, admin, list, stats }
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={undefined}
       description={description}
       canonicalPath="/"

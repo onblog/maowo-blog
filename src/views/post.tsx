@@ -236,7 +236,6 @@ export function PostPage({
       locale={locale}
       colorMode={colorMode}
       reader={reader}
-      admin={admin}
       title={post.title}
       description={post.excerpt ?? undefined}
       canonicalPath={`/p/${post.slug}`}

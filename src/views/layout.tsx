@@ -2,7 +2,7 @@ import type { Child } from "hono/jsx";
 import { t } from "../lib/i18n";
 import { ASSET_VERSION, githubUrl } from "../lib/brand";
 import { THEME_BOOT_SCRIPT } from "../lib/theme";
-import type { AdminUser, Locale, ReaderUser, SiteRow, ColorMode } from "../types";
+import type { Locale, ReaderUser, SiteRow, ColorMode } from "../types";
 
 export function siteName(site: SiteRow): string {
   return site.name;
@@ -21,7 +21,6 @@ export type LayoutProps = {
   locale: Locale;
   colorMode: ColorMode;
   reader: ReaderUser | null;
-  admin: AdminUser | null;
   title?: string;
   description?: string;
   canonicalPath?: string;
@@ -175,7 +174,7 @@ function CatRope({ locale }: { locale: Locale }) {
 }
 
 export function Layout(props: LayoutProps) {
-  const { site, locale, colorMode, reader, admin, title, description, canonicalPath, ogType, ogImage } = props;
+  const { site, locale, colorMode, reader, title, description, canonicalPath, ogType, ogImage } = props;
   const name = siteName(site);
   const fullTitle = title ? `${title} · ${name}` : name;
   const desc = description || siteTagline(site) || site.seo_description;
@@ -298,12 +297,6 @@ export function Layout(props: LayoutProps) {
                 <GithubIcon size={14} />
                 <span>MAOWO-BLOG</span>
               </a>
-              {admin ? (
-                <>
-                  {" · "}
-                  <a href="/admin">{t(locale, "nav.admin")}</a>
-                </>
-              ) : null}
             </p>
           </div>
         </footer>
