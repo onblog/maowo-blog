@@ -981,6 +981,156 @@
     });
   }
 
+  // ── 后台：信鸽通知 ───────────────────────────────────────────────────
+  // 与站点设置分开保存：Token 是敏感值，不该跟着每次「保存设置」多走一趟。
+  // 「关闭通知」用两次点击确认，不用 window.confirm —— 后台的交互一律走自己的样式。
+  var notifySection = document.querySelector("[data-notify]");
+  if (notifySection) {
+    var notifyEndpoint = notifySection.querySelector("[data-notify-endpoint]");
+    var notifyToken = notifySection.querySelector("[data-notify-token]");
+    var notifyState = notifySection.querySelector("[data-notify-state]");
+    var notifyStatus = notifySection.querySelector("[data-notify-status]");
+    var notifySave = notifySection.querySelector("[data-notify-save]");
+    var notifyTest = notifySection.querySelector("[data-notify-test]");
+    var notifyClear = notifySection.querySelector("[data-notify-clear]");
+
+    var setNotifyStatus = function (text, ok) {
+      if (!notifyStatus) return;
+      notifyStatus.textContent = text || "";
+      notifyStatus.className =
+        "editor__status" + (text ? (ok ? " editor__status--ok" : " editor__status--error") : "");
+    };
+
+    var setNotifyEnabled = function (enabled) {
+      if (notifyState) notifyState.textContent = enabled ? "已开启" : "未开启";
+    };
+
+    // 保存成功后：Token 输入框清空，placeholder 换成服务端回的打码预览。
+    var applyNotifyView = function (view) {
+      if (!view) return;
+      if (notifyEndpoint) notifyEndpoint.value = view.endpoint || "";
+      if (notifyToken) {
+        notifyToken.value = "";
+        notifyToken.placeholder = view.tokenSet
+          ? view.tokenPreview + " · 留空表示不修改"
+          : "pg_…";
+      }
+      setNotifyEnabled(Boolean(view.tokenSet && view.endpoint));
+    };
+
+    var notifyErrorText = function (data) {
+      var error = data && data.error;
+      if (error === "invalid_endpoint") return "接口地址无效，需要 https 地址";
+      if (error === "endpoint_https_required") return "接口地址必须是 https";
+      if (error === "token_invalid") return "Token 无效，不能包含空白字符";
+      if (error === "token_too_long") return "Token 过长";
+      if (error === "notify_unconfigured") return "请先填写接口地址与 Token";
+      if (error === "notify_failed") {
+        if (data.reason === "timeout") return "发送超时，请检查接口地址";
+        if (data.reason === "network") return "网络错误，请稍后再试";
+        if (data.reason === "http") return "信鸽返回 HTTP " + data.status;
+      }
+      return "操作失败，请稍后再试";
+    };
+
+    if (notifySave) {
+      notifySave.addEventListener("click", function () {
+        var payload = { endpoint: notifyEndpoint ? notifyEndpoint.value : "" };
+        // 留空 = 不修改 Token；只有真的输入了新值才发，避免把打码预览当 Token 存回去。
+        var token = notifyToken ? notifyToken.value.trim() : "";
+        if (token) payload.token = token;
+
+        if (notifySave.disabled) return;
+        notifySave.disabled = true;
+        setNotifyStatus("保存中……", true);
+        api("/api/admin/notify", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+          .then(function (result) {
+            if (result.ok && result.data && result.data.ok) {
+              applyNotifyView(result.data);
+              setNotifyStatus("通知设置已保存", true);
+              showToast("通知设置已保存");
+            } else {
+              setNotifyStatus(notifyErrorText(result.data), false);
+            }
+          })
+          .catch(function () {
+            setNotifyStatus("网络异常，请稍后再试", false);
+          })
+          .then(function () {
+            notifySave.disabled = false;
+          });
+      });
+    }
+
+    if (notifyTest) {
+      notifyTest.addEventListener("click", function () {
+        if (notifyTest.disabled) return;
+        notifyTest.disabled = true;
+        setNotifyStatus("发送中……", true);
+        api("/api/admin/notify/test", { method: "POST" })
+          .then(function (result) {
+            if (result.ok && result.data && result.data.ok) {
+              setNotifyStatus("测试通知已发出，请查看信鸽", true);
+            } else {
+              setNotifyStatus(notifyErrorText(result.data), false);
+            }
+          })
+          .catch(function () {
+            setNotifyStatus("网络异常，请稍后再试", false);
+          })
+          .then(function () {
+            notifyTest.disabled = false;
+          });
+      });
+    }
+
+    if (notifyClear) {
+      var clearLabel = notifyClear.textContent;
+      var clearTimer = null;
+      var restoreClear = function () {
+        notifyClear.textContent = clearLabel;
+        clearTimer = null;
+      };
+      notifyClear.addEventListener("click", function () {
+        if (clearTimer) {
+          window.clearTimeout(clearTimer);
+          restoreClear();
+          notifyClear.disabled = true;
+          setNotifyStatus("正在关闭……", true);
+          api("/api/admin/notify", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ endpoint: "", token: "" })
+          })
+            .then(function (result) {
+              if (result.ok && result.data && result.data.ok) {
+                applyNotifyView(result.data);
+                setNotifyStatus("通知已关闭", true);
+                showToast("通知已关闭");
+              } else {
+                setNotifyStatus(notifyErrorText(result.data), false);
+              }
+            })
+            .catch(function () {
+              setNotifyStatus("网络异常，请稍后再试", false);
+            })
+            .then(function () {
+              notifyClear.disabled = false;
+            });
+          return;
+        }
+        // 第一次点击只负责「确认」，不碰数据；4 秒内不确认就复原。
+        notifyClear.textContent = "再点一次确认关闭";
+        setNotifyStatus("关闭后会清空接口地址与 Token", false);
+        clearTimer = window.setTimeout(restoreClear, 4000);
+      });
+    }
+  }
+
   // ── 后台：评论敏感词 ─────────────────────────────────────────────────
   // 只做三件事：上传（整份覆盖）、下载（纯链接，无需脚本）、清空。
   // **不展示词表内容** —— 它不是给人读的；要改就下载、改完再上传。

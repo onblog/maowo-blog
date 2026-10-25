@@ -7,6 +7,7 @@ import { THEME_BOOT_SCRIPT } from "../lib/theme";
 import { ASSET_VERSION } from "../lib/brand";
 import { formatDate } from "./format";
 import type { SensitiveWordStats } from "../services/sensitive-words";
+import type { NotifySettingsView } from "../services/notify";
 
 type Shell = {
   site: SiteRow;
@@ -612,11 +613,13 @@ export function AdminSettingsPage({
   locale,
   colorMode,
   admin,
+  notify,
 }: {
   site: SiteRow;
   locale: Locale;
   colorMode: ColorMode;
   admin: AdminUser;
+  notify: NotifySettingsView;
 }) {
   return (
     <AdminShell site={site} locale={locale} colorMode={colorMode} admin={admin} active="settings">
@@ -709,6 +712,64 @@ export function AdminSettingsPage({
           </button>
         </div>
       </form>
+
+      {/*
+        信鸽通知：单独一块、独立保存，不进上面的站点表单。
+        理由：Token 是敏感值，没必要跟着每次「保存设置」在请求体里多走一趟；
+        而且站点表单的按钮语义是「保存设置」，混进通知字段会让人以为两件事一起存。
+      */}
+      <section class="links-editor" data-notify>
+        <div class="links-editor__head">
+          <div>
+            <h2 class="links-editor__title">{t(locale, "admin.settings.notify_title")}</h2>
+            <p class="muted links-editor__hint">
+              {t(locale, "admin.settings.notify_hint", { site: site.name })}
+            </p>
+          </div>
+          <span class="muted" data-notify-state>
+            {notify.tokenSet && notify.endpoint
+              ? t(locale, "admin.settings.notify_on")
+              : t(locale, "admin.settings.notify_off")}
+          </span>
+        </div>
+        <div class="admin-form__grid">
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.notify_endpoint")}</span>
+            <input
+              class="field__input"
+              type="url"
+              placeholder={t(locale, "admin.settings.notify_endpoint_placeholder")}
+              value={notify.endpoint}
+              data-notify-endpoint
+            />
+          </label>
+          <label class="field">
+            <span class="field__label">{t(locale, "admin.settings.notify_token")}</span>
+            <input
+              class="field__input"
+              type="password"
+              placeholder={
+                notify.tokenSet
+                  ? `${notify.tokenPreview} · ${t(locale, "admin.settings.notify_token_placeholder")}`
+                  : "pg_…"
+              }
+              data-notify-token
+            />
+          </label>
+        </div>
+        <div class="admin-form__actions">
+          <p class="editor__status" data-notify-status />
+          <button class="btn btn--ghost" type="button" data-notify-test>
+            {t(locale, "admin.settings.notify_test")}
+          </button>
+          <button class="btn btn--ghost" type="button" data-notify-clear>
+            {t(locale, "admin.settings.notify_clear")}
+          </button>
+          <button class="btn btn--primary" type="button" data-notify-save>
+            {t(locale, "admin.settings.notify_save")}
+          </button>
+        </div>
+      </section>
 
       <dialog class="link-dialog" data-link-dialog>
         <form method="dialog" class="link-dialog__form" data-link-form>

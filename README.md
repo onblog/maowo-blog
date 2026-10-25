@@ -61,6 +61,9 @@ That is the feature.
   Matched comments are rejected with a generic "inappropriate content" message and never reach the database or your
   daily quota. The list lives in D1, **not in this repo** (political/sexual vocabulary should not be published),
   is capped at 5000 words, and matching normalizes whitespace/punctuation/fullwidth first.
+- **Pigeon notifications.** Fill in a pigeon endpoint and token in `/admin/settings`; each new comment sends one
+  line — “Maowo Blog has a new comment” — never the comment body. Delivery failures are logged, never block the
+  comment, and a “send a test” button verifies the token without waiting for a real visitor.
 - **Agent-ready API.** `/admin/migrate` shows one copy-pasteable prompt; Codex / Claude / WorkBuddy then write,
   publish and migrate posts through the same `/api/admin/*` endpoints the UI uses — no second protocol.
 - **One-click export**: the whole site as JSON. Moving in must not mean being locked in.

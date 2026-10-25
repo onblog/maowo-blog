@@ -6,6 +6,7 @@ import { listAll } from "../services/comments";
 import { buildAgentPrompt } from "../lib/agent-prompt";
 import { getSeriesById, listSeriesNames } from "../services/series";
 import { sensitiveWordStats } from "../services/sensitive-words";
+import { getNotifySettings, toNotifyView } from "../services/notify";
 import {
   AdminAccountPage,
   AdminCommentsPage,
@@ -116,7 +117,9 @@ adminPages.get("/comments", async (c) => {
 adminPages.get("/settings", async (c) => {
   const blocked = guard(c);
   if (blocked) return blocked;
-  return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} />);
+  // 通知配置随页面一次渲染：Token 只以打码预览下发，明文不出服务端。
+  const notify = toNotifyView(await getNotifySettings(c.env));
+  return c.html(<AdminSettingsPage {...base(c)} admin={c.get("admin")!} notify={notify} />);
 });
 
 adminPages.get("/account", async (c) => {

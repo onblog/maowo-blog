@@ -37,6 +37,13 @@ import {
   type SensitiveWordStats,
 } from "../services/sensitive-words";
 import { renderMarkdown } from "../lib/markdown";
+import {
+  getNotifySettings,
+  notifyNewComment,
+  saveNotifySettings,
+  sendTestNotification,
+  toNotifyView,
+} from "../services/notify";
 import { getSite, updateSite } from "../services/site";
 import type { AppEnv, Locale } from "../types";
 
@@ -145,6 +152,10 @@ api.post("/comments", async (c) => {
     website,
     reader,
   });
+
+  // 信鸽通知：旁路能力，绝不阻塞评论响应，也绝不因通知失败影响评论本身。
+  // 站点名在上面已读取过；文案固定为「<站点名>有了新评论」。
+  c.executionCtx.waitUntil(notifyNewComment(c.env, site.name));
 
   return c.json({ ok: true, comment }, 201);
 });
@@ -442,6 +453,44 @@ api.put("/admin/site", requireAdminApi, async (c) => {
 
   const site = await updateSite(c.env, patch);
   return c.json({ ok: true, site });
+});
+
+// ── 后台：信鸽通知 ──────────────────────────────────────────────────────────
+// 读：只回「地址 + Token 是否已配置 + 打码预览」，明文 Token 永不出后台接口。
+// 写：endpoint / token 任一字段不传 = 不改；传空字符串 = 清空（两个都空即关闭）。
+api.get("/admin/notify", requireAdminApi, async (c) => {
+  const settings = await getNotifySettings(c.env);
+  return c.json({ ok: true, ...toNotifyView(settings) });
+});
+
+api.put("/admin/notify", requireAdminApi, async (c) => {
+  const body = await c.req.json<{ endpoint?: unknown; token?: unknown }>();
+  const patch: { endpoint?: string; token?: string } = {};
+  // 只接受字符串：数字/对象一律当作「没传」，不做隐式转换
+  if (typeof body.endpoint === "string") patch.endpoint = body.endpoint;
+  if (typeof body.token === "string") patch.token = body.token;
+
+  const result = await saveNotifySettings(c.env, patch);
+  if (!result.ok) return c.json({ error: result.error }, 400);
+  return c.json({ ok: true, ...toNotifyView(result.settings) });
+});
+
+// 测试发送：验证「地址通不通、Token 有没有过期」。文案与真实评论通知完全一致，
+// 保证测试通过 = 真实评论的通知也一定能发出去。
+api.post("/admin/notify/test", requireAdminApi, async (c) => {
+  const site = await getSite(c.env);
+  const result = await sendTestNotification(c.env, site.name);
+  if (result.ok) return c.json({ ok: true, status: result.status });
+  return c.json(
+    {
+      ok: false,
+      error: result.reason === "unconfigured" ? "notify_unconfigured" : "notify_failed",
+      reason: result.reason,
+      status: result.status ?? null,
+      detail: result.detail ?? null,
+    },
+    400,
+  );
 });
 
 api.post("/admin/preview", requireAdminApi, async (c) => {
