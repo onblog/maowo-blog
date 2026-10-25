@@ -1020,7 +1020,7 @@
 
     var notifyErrorText = function (data) {
       var error = data && data.error;
-      if (error === "invalid_endpoint") return "接口地址无效，需要 https 地址";
+      if (error === "invalid_endpoint") return "接口地址格式不正确，请填写域名（例如 https://你的域名）";
       if (error === "endpoint_https_required") return "接口地址必须是 https";
       if (error === "token_invalid") return "Token 无效，不能包含空白字符";
       if (error === "token_too_long") return "Token 过长";

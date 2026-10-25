@@ -4,6 +4,7 @@ import { messages, t } from "../src/lib/i18n";
 import { slugify, wordCount, readingMinutes, formatDate, githubLogin } from "../src/lib/brand";
 import { excerpt, renderMarkdown, renderMarkdownWithToc } from "../src/lib/markdown";
 import { getNeighbours } from "../src/services/posts";
+import { normalizeEndpoint } from "../src/services/notify";
 import type { PostRow } from "../src/types";
 
 describe("i18n", () => {
@@ -151,5 +152,37 @@ describe("上下篇方向", () => {
     const { prev, next } = await getNeighbours(env, { published_at: 5000 } as PostRow);
     expect(prev?.slug).toBe("older");
     expect(next?.slug).toBe("newer");
+  });
+});
+
+describe("信鸽接口地址", () => {
+  it("漏写协议时自动补 https", () => {
+    expect(normalizeEndpoint("pigeon.example.test")).toEqual({ ok: true, value: "https://pigeon.example.test" });
+  });
+
+  it("粘贴完整接口地址时剥掉 /api/v1/notify", () => {
+    expect(normalizeEndpoint("https://pigeon.example.test/api/v1/notify")).toEqual({
+      ok: true,
+      value: "https://pigeon.example.test",
+    });
+    expect(normalizeEndpoint("https://pigeon.example.test/pigeon/api/v1/notify/")).toEqual({
+      ok: true,
+      value: "https://pigeon.example.test/pigeon",
+    });
+  });
+
+  it("http 一律拒绝，不静默升级", () => {
+    expect(normalizeEndpoint("http://pigeon.example.test")).toEqual({
+      ok: false,
+      error: "endpoint_https_required",
+    });
+  });
+
+  it("空值表示关闭", () => {
+    expect(normalizeEndpoint("   ")).toEqual({ ok: true, value: "" });
+  });
+
+  it("解析不了的地址才报格式错误", () => {
+    expect(normalizeEndpoint("not a url")).toEqual({ ok: false, error: "invalid_endpoint" });
   });
 });

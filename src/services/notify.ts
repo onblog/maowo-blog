@@ -71,9 +71,13 @@ export function toNotifyView(settings: NotifySettings): NotifySettingsView {
 export function normalizeEndpoint(
   raw: string,
 ): { ok: true; value: string } | { ok: false; error: "invalid_endpoint" | "endpoint_https_required" } {
-  const value = raw.trim().replace(/\/+$/, "");
+  let value = raw.trim();
   if (!value) return { ok: true, value: "" };
   if (value.length > ENDPOINT_MAX) return { ok: false, error: "invalid_endpoint" };
+
+  // 只填了域名（没写协议）时补 https —— 从文档里抄地址最常漏的就是这一截。
+  // 补的是 https，不是跟着输入走：http 仍然会被下面那条拒掉。
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) value = `https://${value}`;
 
   let url: URL;
   try {
@@ -82,10 +86,15 @@ export function normalizeEndpoint(
     return { ok: false, error: "invalid_endpoint" };
   }
   if (url.protocol !== "https:") return { ok: false, error: "endpoint_https_required" };
-  if (url.search || url.hash) return { ok: false, error: "invalid_endpoint" };
-  if (/\/api\/v1\/notify$/.test(url.pathname)) return { ok: false, error: "invalid_endpoint" };
 
-  return { ok: true, value: `${url.protocol}//${url.host}${url.pathname.replace(/\/+$/, "")}` };
+  // 直接粘贴完整接口地址（…/api/v1/notify）时剥掉后缀，不逼人再删一遍；
+  // 查询串与 hash 对通知端点没有意义，一并丢弃。重复剥两次是为了兼容尾斜杠。
+  const path = url.pathname
+    .replace(/\/+$/, "")
+    .replace(/\/api\/v1\/notify$/, "")
+    .replace(/\/+$/, "");
+
+  return { ok: true, value: `${url.protocol}//${url.host}${path}` };
 }
 
 export type NotifyPatch = {
