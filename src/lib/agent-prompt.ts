@@ -36,6 +36,7 @@ Content-Type: application/json
 | DELETE | /api/admin/posts/:id | 删除文章 |
 | POST | /api/admin/preview | 把 Markdown 渲染为 HTML（用于校验排版） |
 | GET | /api/admin/export | 导出全部文章 JSON |
+| POST | /api/admin/media | 上传图片（multipart，字段名 file），返回可直接写进 Markdown 的 url |
 
 ## 3. 文章字段
 
@@ -44,7 +45,7 @@ Content-Type: application/json
 - tags：逗号分隔，最多 8 个
 - status：draft（草稿）或 published（发布）
 - excerpt：留空自动从正文截取
-- cover_image：封面图 URL
+- cover_image：封面图 URL（先用 /api/admin/media 上传，再填它返回的 url）
 - pinned：是否置顶（true / false）
 - series：合集名，留空表示不属于合集（合集页会自动出现）
 - published_at：自定义发布时间（Unix 毫秒），留空则发布时使用当前时间
@@ -61,6 +62,11 @@ curl -s -b miao.txt -X POST ${base}/api/admin/posts \\
   -H 'content-type: application/json' \\
   -d '{"title":"文章标题","content_md":"## 小标题\\n\\n正文","tags":"随笔","status":"draft"}'
 
+# 上传配图（先传再引用；响应里的 url 直接写进 Markdown）
+curl -s -b miao.txt -X POST ${base}/api/admin/media \\
+  -F "file=@cover.jpg"
+# {"ok":true,"url":"/media/01xxxx.jpeg"}  ->  ![封面](/media/01xxxx.jpeg)
+
 # 发布（PUT 是整体覆盖，正文要一起带上）
 curl -s -b miao.txt -X PUT ${base}/api/admin/posts/<id> \\
   -H 'content-type: application/json' \\
@@ -70,7 +76,8 @@ curl -s -b miao.txt -X PUT ${base}/api/admin/posts/<id> \\
 
 - 先存 draft，我确认后再改成 published。
 - 没有我的明确要求，不要改动站点设置，也不要删除已有文章。
-- 每次完成后，把文章的完整地址（${base}/<slug>）告诉我。
+- 每次完成后，把文章的完整地址（${base}/p/<slug>）告诉我。
+- 图片先用 /api/admin/media 上传再把 url 写进正文；单张 ≤ 8MB，支持 png / jpeg / webp / gif / svg / avif。
 - 站点语言固定为中文，不需要生成英文版本。`;
   }
 
@@ -99,6 +106,7 @@ Every following request must send that cookie: use -c/-b with curl.
 | DELETE | /api/admin/posts/:id | Delete a post |
 | POST | /api/admin/preview | Render Markdown to HTML (sanity check) |
 | GET | /api/admin/export | Export every post as JSON |
+| POST | /api/admin/media | Upload an image (multipart, field name file); returns a url ready for Markdown |
 
 ## 3. Fields
 
@@ -107,7 +115,7 @@ Every following request must send that cookie: use -c/-b with curl.
 - tags: comma separated, up to 8
 - status: draft or published
 - excerpt: auto-extracted from the body when empty
-- cover_image: cover image URL
+- cover_image: cover image URL (upload it through /api/admin/media first and use the returned url)
 - pinned: pin to top (true / false)
 - series: series name, empty means none (the series page picks it up automatically)
 - published_at: custom publish time (Unix ms); empty uses the publish moment
@@ -124,6 +132,11 @@ curl -s -b miao.txt -X POST ${base}/api/admin/posts \\
   -H 'content-type: application/json' \\
   -d '{"title":"Post title","content_md":"## Section\\n\\nBody","tags":"notes","status":"draft"}'
 
+# Upload an image first, then reference the returned url
+curl -s -b miao.txt -X POST ${base}/api/admin/media \\
+  -F "file=@cover.jpg"
+# {"ok":true,"url":"/media/01xxxx.jpeg"}  ->  ![cover](/media/01xxxx.jpeg)
+
 # Publish (PUT replaces the whole post, send the body again)
 curl -s -b miao.txt -X PUT ${base}/api/admin/posts/<id> \\
   -H 'content-type: application/json' \\
@@ -133,6 +146,7 @@ curl -s -b miao.txt -X PUT ${base}/api/admin/posts/<id> \\
 
 - Always create drafts first; publish only after I confirm.
 - Do not change site settings or delete existing posts unless I explicitly ask.
-- When done, report the full URL of the post (${base}/<slug>).
+- When done, report the full URL of the post (${base}/p/<slug>).
+- Upload images through /api/admin/media before referencing them; up to 8MB each, png / jpeg / webp / gif / svg / avif.
 - The site language is fixed to English; do not generate translations.`;
 }
