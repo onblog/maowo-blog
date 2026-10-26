@@ -231,13 +231,22 @@ md.renderer.rules.fence = (tokens, idx) => {
   );
 };
 
-// 用户内容里的外链统一加 rel，避免 SEO 权重外流与 window.opener 风险
+/**
+ * 用户内容里的外链统一加 rel，避免 SEO 权重外流与 window.opener 风险。
+ *
+ * 正文里的链接一律 `target="_blank"`：读者点了就走，回来时文章还在原来的滚动位置
+ * （独立博客的正文里常常一篇文章引十几篇外站文章，留在当前标签会直接把阅读流打断）。
+ * **页内锚点（`#xxx`）除外** —— 那是同一页内的导航，新开标签会得到一个没有上下文的页面。
+ */
 const defaultLinkOpen =
   md.renderer.rules.link_open ??
   ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
 
 md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-  tokens[idx]?.attrSet("rel", "nofollow ugc noopener");
+  const token = tokens[idx];
+  token?.attrSet("rel", "nofollow ugc noopener");
+  const href = String(token?.attrGet("href") ?? "");
+  if (!href.startsWith("#")) token?.attrSet("target", "_blank");
   return defaultLinkOpen(tokens, idx, options, env, self);
 };
 

@@ -7,7 +7,6 @@ import {
   archiveGroups,
   getNeighbours,
   getPublishedBySlug,
-  incrementViews,
   listPublished,
   siteStats,
 } from "../services/posts";
@@ -94,9 +93,8 @@ pages.get("/p/:slug", async (c) => {
     countForPost(c.env, post.id),
   ]);
 
-  // 阅读数在渲染后自增：这一次的展示值是本次访问前的数，语义上是「此前被看过多少次」
-  c.executionCtx.waitUntil(incrementViews(c.env, post.id));
-
+  // 浏览量不再在这里自增：页面每次 SSR 都 +1 会把同一个人刷新十次算成十个读者。
+  // 现在由前台脚本带 localStorage 去重后调 `POST /api/views` 递增（见 public/app.js）。
   return c.html(
     <PostPage
       {...baseProps(c)}

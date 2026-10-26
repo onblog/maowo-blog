@@ -2411,6 +2411,19 @@ a.post-nav__item:hover {
 .tool--mode span[hidden] {
   display: none;
 }
+/*
+ * 拷贝源码：工具栏右侧的两个动作。用等宽字体 + 小字号，视觉上当「代码标签」，
+ * 和左边的 Markdown 命令按钮区分开；不加边框，窄屏上不会把工具栏撑出第二行。
+ */
+.tool--copy {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+.tool--copy:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .tool__mono {
   font-family: var(--font-mono);
 }

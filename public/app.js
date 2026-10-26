@@ -44,6 +44,94 @@
     }, 3000);
   }
 
+  // ── 文章浏览量（UV）────────────────────────────────────────────────────
+  /*
+   * 每个浏览器对每篇文章只上报一次：
+   *   localStorage["miao:views"] = { "/p/1690000000000": "<visitorId>" }
+   * 有 key 就不再请求接口 —— 所以后端只需要「收到请求就 +1」，不用存访客表、不用写去重逻辑。
+   *
+   * 只有接口确认成功才落本地：网络失败 / 429 不会让这篇文章被永久跳过，
+   * 下次访问会再试一次（仍然是同一个路径，仍然只可能成功一次）。
+   *
+   * 存储不可用（无痕模式、禁用 Cookie）时**不上报**：那种状态下每次访问都算「没来过」，
+   * 会把 UV 刷成 PV，宁可这篇不计。
+   */
+  (function () {
+    var el = document.querySelector("[data-view-count]");
+    if (!el) return;
+
+    var slug = el.getAttribute("data-post-slug");
+    var path = window.location.pathname;
+    var VIEWS_KEY = "miao:views";
+    var VISITOR_KEY = "miao:visitor";
+
+    function readSeen() {
+      try {
+        var raw = localStorage.getItem(VIEWS_KEY);
+        var parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function visitorId() {
+      try {
+        var existing = localStorage.getItem(VISITOR_KEY);
+        if (existing) return existing;
+      } catch (e) {
+        return null;
+      }
+      var id =
+        window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : "v-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+      try {
+        localStorage.setItem(VISITOR_KEY, id);
+      } catch (e) {
+        return null;
+      }
+      return id;
+    }
+
+    function report() {
+      var seen = readSeen();
+      if (!seen || seen[path]) return;
+      var visitor = visitorId();
+      if (!visitor) return;
+
+      fetch("/api/views", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: slug, visitorId: visitor })
+      })
+        .then(function (res) {
+          return res.ok ? res.json() : null;
+        })
+        .then(function (data) {
+          if (!data || typeof data.views !== "number") return;
+          seen[path] = visitor;
+          try {
+            localStorage.setItem(VIEWS_KEY, JSON.stringify(seen));
+          } catch (e) {
+            /* 写不进去也不影响这次展示 */
+          }
+          var template = el.getAttribute("data-view-template") || "{n}";
+          el.textContent = template.replace("{n}", String(data.views));
+        })
+        .catch(function () {
+          /* 下次访问再试 */
+        });
+    }
+
+    // Chrome 的预渲染不是一次真实阅读：等页面真正被展示再上报
+    if (document.prerendering) {
+      document.addEventListener("prerenderingchange", report, { once: true });
+    } else {
+      report();
+    }
+  })();
+
   // ── 代码块复制（事件委托：编辑器预览里动态插入的代码块也覆盖）──
   document.addEventListener("click", function (event) {
     var btn = event.target.closest("[data-copy-code]");

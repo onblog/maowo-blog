@@ -70,6 +70,19 @@ describe("Markdown 渲染", () => {
     expect(html).toContain("nofollow");
   });
 
+  it("正文链接新标签页打开，页内锚点留在当前页", () => {
+    const external = renderMarkdown("[x](https://example.com)");
+    expect(external).toContain('target="_blank"');
+    expect(external).toContain("noopener");
+
+    const internal = renderMarkdown("[x](/p/123)");
+    expect(internal).toContain('target="_blank"');
+
+    // 页内锚点是同一页的导航，新开标签会得到一个没有上下文的页面
+    const anchor = renderMarkdown("[x](#section)");
+    expect(anchor).not.toContain('target="_blank"');
+  });
+
   it("TOC 只收 h2/h3 并生成锚点", () => {
     const { toc, html } = renderMarkdownWithToc("## 一级\n\n### 二级\n");
     expect(toc.map((item) => item.text)).toEqual(["一级", "二级"]);

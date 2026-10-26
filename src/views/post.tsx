@@ -250,6 +250,19 @@ export function PostPage({
             <time datetime={new Date(post.published_at ?? post.created_at).toISOString()}>{published}</time>
             <span class="dot" aria-hidden="true">·</span>
             <span>{t(locale, "post.reading_time", { n: post.reading_minutes })}</span>
+            {/*
+              浏览量来自 posts.views（读者端去重后由 /api/views 递增）。
+              模板从 i18n 取，前端拿到接口返回值后只替换 `{n}`，不必在 JS 里再维护一份文案。
+            */}
+            <span class="dot" aria-hidden="true">·</span>
+            <span
+              class="post__views"
+              data-view-count="true"
+              data-post-slug={post.slug}
+              data-view-template={t(locale, "post.views", { n: "{n}" })}
+            >
+              {t(locale, "post.views", { n: post.views })}
+            </span>
             {post.tags.length > 0 ? (
               <span class="post__tags">
                 {post.tags.map((tag) => (

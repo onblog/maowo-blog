@@ -50,6 +50,12 @@ WordPress 太重：PHP + MySQL + 一堆插件。Hexo / Hugo 很快，但要本�
 - **自定义发布时间**：补发旧文或指定日期；创建/更新时间只留在数据库里，不对外展示。
 - **可爱为壳，内容为核**。大圆角、手绘猫 mascot，中英混排都调过的阅读排版。只有一套视觉，把它做好就够了。
 - **亮 / 暗双色**，在首次绘制前决定（内联脚本），未手动选择时跟随系统。
+- **不装统计脚本也有阅读数**：文章页显示「多少人浏览过」。浏览器生成访客 ID，把 `path → visitorId` 存在
+  `localStorage`，首次访问才调一次 `POST /api/views`，服务端只对 `posts.views` 做 +1。
+  没有 Cookie、没有第三方统计、也没有访客表。
+- **方便搬出去**：编辑器可把正文复制成 Markdown **或** HTML，图片与站内链接会按**当前访问地址**改写成绝对
+  地址，直接贴进公众号、掘金、知乎或其他博客即可。上传的图片带跨域响应头且**不校验 Referer**，外站引用
+  也能正常加载。正文链接统一新标签页打开，已发布的文章在编辑页多一个「查看文章」入口。
 - **评论走 GitHub 登录**，申请 `read:user user:email`：GitHub 身份（`github_id`、login、头像）与账号的**已验证 primary 邮箱**
   一起落进 `users` 表，邮箱只用于账号识别与站务联系（不展示、接口不返回、日志不记录）。每个账号**每天（UTC）最多 10 条评论**，
   另有一道全站每日上限防脚本刷屏。可选「你的博客地址」字段，保留独立博客圈「评论 → 回访 → 反向链接」的老规矩。
@@ -173,7 +179,9 @@ curl -s https://你的域名/robots.txt | grep Sitemap   # 应为线上域名
 | `POST` / `PUT` | `/api/admin/posts` | 新建 / 覆盖文章 |
 | `DELETE` | `/api/admin/posts/:id` | 删除文章 |
 | `POST` | `/api/admin/preview` | Markdown 渲染成 HTML |
+| `POST` | `/api/admin/copy-source` | 返回可移植的 `{ markdown, html }`（绝对地址） |
 | `GET` | `/api/admin/export` | 导出全部文章 JSON |
+| `POST` | `/api/views` | 公开接口：已发布文章的浏览量 +1（无需登录） |
 
 没有「Agent 专用协议」，也没有额外的 Token：Agent 的登录方式和后台页面完全一样。
 

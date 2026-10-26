@@ -40,6 +40,41 @@
     }, 3000);
   }
 
+  // ── 复制文本：优先 Clipboard API，失败退回隐藏 textarea + execCommand ──
+  // 不用 window.prompt 兜底：那是浏览器原生的输入框，和后台整套视觉完全不是一回事。
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return legacyCopy(text);
+      });
+    }
+    return legacyCopy(text);
+  }
+
+  function legacyCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      // 放在视口外而不是 display:none —— 后者在部分浏览器里选不中
+      area.style.position = "fixed";
+      area.style.top = "-1000px";
+      area.style.left = "-1000px";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      var ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      document.body.removeChild(area);
+      if (ok) resolve();
+      else reject(new Error("copy_failed"));
+    });
+  }
+
   // ── 代码块复制（编辑器预览区也会渲染同样的按钮）──
   document.addEventListener("click", function (event) {
     var btn = event.target.closest("[data-copy-code]");
@@ -516,6 +551,36 @@
         });
       });
     }
+
+    // ── 拷贝源码：服务端把图片与站内链接绝对化后返回，前端只负责复制 ──
+    // 复制不改编辑器内容：绝对地址只活在这一次拷贝里，正文保持站内相对路径。
+    var copySourceButtons = editorPage.querySelectorAll("[data-copy-source]");
+    copySourceButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!input) return;
+        var format = btn.getAttribute("data-copy-source") === "html" ? "html" : "markdown";
+        var label = format === "html" ? "HTML" : "Markdown";
+        btn.disabled = true;
+        api("/api/admin/copy-source", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ content_md: input.value, origin: window.location.origin })
+        })
+          .then(function (result) {
+            if (!result.ok || !result.data) throw new Error("copy_source_failed");
+            return copyText(format === "html" ? result.data.html : result.data.markdown);
+          })
+          .then(function () {
+            showToast("已复制 " + label + "：图片与站内链接已转为绝对地址");
+          })
+          .catch(function () {
+            showToast("复制失败，请检查浏览器剪贴板权限");
+          })
+          .then(function () {
+            btn.disabled = false;
+          });
+      });
+    });
 
     // ── 发布时间：库里存 UTC 毫秒，输入框按本地时区显示 ──
     function localizePublishTime() {

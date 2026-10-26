@@ -272,6 +272,15 @@ export function AdminEditorPage({
             aria-label={t(locale, "admin.editor.title")}
           />
           <div class="editor-head__actions">
+            {/*
+              已发布的文章才有「查看文章」：草稿在前台是 404，放个按钮只会点出一个错误页。
+              新标签页打开 —— 编辑器里可能还有未保存的改动，跳走就丢了。
+            */}
+            {post?.status === "published" ? (
+              <a class="btn btn--ghost" href={`/p/${post.slug}`} target="_blank" rel="noopener">
+                {t(locale, "admin.editor.view")}
+              </a>
+            ) : null}
             <a class="btn btn--ghost" href="/admin">
               {t(locale, "admin.editor.back")}
             </a>
@@ -315,6 +324,30 @@ export function AdminEditorPage({
             🖼
           </button>
           <span class="editor-toolbar__spacer" />
+          {/*
+            拷贝源码：写文章时最常做的「搬出去」动作（公众号 / 掘金 / 知乎 / 其他博客）。
+            复制前由服务端把图片与站内链接改成当前访问地址的绝对 URL，否则贴到外站全是 404。
+            只读当前编辑器里的内容 —— 不要求先保存，写到一半也能拷。
+          */}
+          <button
+            class="tool tool--copy"
+            type="button"
+            data-copy-source="md"
+            title={t(locale, "admin.tool.copy_md")}
+            aria-label={t(locale, "admin.tool.copy_md")}
+          >
+            MD
+          </button>
+          <button
+            class="tool tool--copy"
+            type="button"
+            data-copy-source="html"
+            title={t(locale, "admin.tool.copy_html")}
+            aria-label={t(locale, "admin.tool.copy_html")}
+          >
+            HTML
+          </button>
+          <span class="tool-sep" aria-hidden="true" />
           <button class="tool tool--mode" type="button" data-editor-mode-toggle title={t(locale, "admin.editor.mode_toggle")}>
             <span data-mode-icon="split" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

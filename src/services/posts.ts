@@ -166,8 +166,23 @@ export async function getNeighbours(
   return { prev, next };
 }
 
-export async function incrementViews(env: Env, id: string): Promise<void> {
-  await env.DB.prepare("UPDATE posts SET views = views + 1 WHERE id = ?").bind(id).run();
+/**
+ * 浏览量自增（读者端 `POST /api/views` 调用）。
+ *
+ * 去重放在浏览器：同一浏览器对同一篇文章只上报一次（localStorage 记 path → visitorId），
+ * 所以这里**只负责 +1**，不存访客、不写第二张表、不做任何"是否来过"的判断。
+ *
+ * 条件里带 `status = 'published'`：草稿不该被前台接口摸到，也不该因为谁试过而涨数字。
+ * `RETURNING views` 把自增后的值一次带回，省掉再查一次（并发下也不会读到别人的值）。
+ * 返回 `null` 表示文章不存在或未发布。
+ */
+export async function incrementPublishedViews(env: Env, slug: string): Promise<number | null> {
+  const row = await env.DB.prepare(
+    "UPDATE posts SET views = views + 1 WHERE slug = ? AND status = 'published' RETURNING views",
+  )
+    .bind(slug)
+    .first<{ views: number }>();
+  return row?.views ?? null;
 }
 
 export type PostInput = {

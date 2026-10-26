@@ -26,7 +26,8 @@ import {
   remove,
   setStatus,
 } from "../services/comments";
-import { createPost, deletePost, getById, getPublishedBySlug, updatePost } from "../services/posts";
+import { createPost, deletePost, getById, getPublishedBySlug, incrementPublishedViews, updatePost } from "../services/posts";
+import { absolutizeMarkdown, normalizeOrigin, portableHtml } from "../lib/copy-source";
 import { parseSensitiveWordList, sensitiveSummaryText } from "../lib/sensitive-words";
 import {
   clearSensitiveWords,
@@ -78,6 +79,48 @@ function recordFailure(ip: string): void {
   }
   entry.count += 1;
 }
+
+// ── 浏览量（读者端 UV）──────────────────────────────────────────────────────
+//
+// 去重在浏览器：同一浏览器对同一篇文章只在 localStorage 里记一次（path → visitorId），
+// 有记录就不再调这个接口；所以服务端**只负责 +1**，不落访客表、不做唯一性判断。
+//
+// 仍然留一道 isolate 内存限流：它是公开写接口，完全不设防时一行 curl 就能把数字刷上天。
+// 30 次/分钟对真人绰绰有余；冷启动会重置 —— 目标只是挡住脚本，不是精确配额。
+const viewHits = new Map<string, { count: number; resetAt: number }>();
+const VIEW_MAX_PER_MINUTE = 30;
+const VIEW_WINDOW_MS = 60 * 1000;
+
+function allowView(ip: string): boolean {
+  const now = Date.now();
+  const entry = viewHits.get(ip);
+  if (!entry || entry.resetAt < now) {
+    viewHits.set(ip, { count: 1, resetAt: now + VIEW_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= VIEW_MAX_PER_MINUTE) return false;
+  entry.count += 1;
+  return true;
+}
+
+api.post("/views", async (c) => {
+  if (!allowView(clientIp(c))) return c.json({ error: "too_fast" }, 429);
+
+  let body: { slug?: unknown; visitorId?: unknown };
+  try {
+    body = await c.req.json<{ slug?: unknown; visitorId?: unknown }>();
+  } catch {
+    return c.json({ error: "invalid_body" }, 400);
+  }
+  const slug = typeof body.slug === "string" ? body.slug.trim().slice(0, 64) : "";
+  if (!slug) return c.json({ error: "slug_required" }, 400);
+
+  const views = await incrementPublishedViews(c.env, slug);
+  if (views === null) return c.json({ error: "post_not_found" }, 404);
+
+  // visitorId 只表示「前端确实生成了一个稳定 ID」；服务端不落库、不记录、不返回。
+  return c.json({ ok: true, views });
+});
 
 // ── 评论 ────────────────────────────────────────────────────────────────────
 
@@ -496,6 +539,38 @@ api.post("/admin/notify/test", requireAdminApi, async (c) => {
 api.post("/admin/preview", requireAdminApi, async (c) => {
   const body = await c.req.json<{ content_md?: string }>();
   return c.json({ ok: true, html: renderMarkdown(body.content_md ?? "") });
+});
+
+/**
+ * 拷贝源码：把编辑器里的正文按「可移植」的样子返回一份。
+ *
+ * 返回 `markdown` 与 `html` 两份，前端按按钮各取一份复制 —— 转换必须在服务端做：
+ *  · 规则只有一份（`src/lib/copy-source.ts`），测得到；
+ *  · HTML 用与文章页**同一个渲染器**，贴出去的结构和线上一致；
+ *  · 存储里的正文不被改写，绝对化只活在一次拷贝里。
+ *
+ * `origin` 由浏览器给（`window.location.origin`，用户选择「始终用当前访问地址」）；
+ * 缺失或非法时回退到本次请求的 origin，绝不使用 `javascript:` 之类的协议。
+ */
+api.post("/admin/copy-source", requireAdminApi, async (c) => {
+  let body: { content_md?: unknown; origin?: unknown };
+  try {
+    body = await c.req.json<{ content_md?: unknown; origin?: unknown }>();
+  } catch {
+    return c.json({ error: "invalid_body" }, 400);
+  }
+  const source = typeof body.content_md === "string" ? body.content_md : "";
+  if (source.length > 512 * 1024) return c.json({ error: "content_too_large" }, 400);
+
+  const origin =
+    normalizeOrigin(typeof body.origin === "string" ? body.origin : null) ?? new URL(c.req.url).origin;
+
+  return c.json({
+    ok: true,
+    origin,
+    markdown: absolutizeMarkdown(source, origin),
+    html: portableHtml(source, origin),
+  });
 });
 
 // ── 后台：全站导出（「进得来也出得去」是抢存量用户的信任前提）──────────────
