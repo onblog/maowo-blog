@@ -55,11 +55,12 @@ That is the feature.
 - **Reading counter without a tracking script.** Every post shows how many distinct browsers have read it. The browser
   generates a visitor ID, stores `path → visitorId` in `localStorage`, and only calls `POST /api/views` the first time;
   the server just increments `posts.views`. No cookies, no analytics vendor, no visitor table.
-- **Copy-out friendly.** The editor copies the article as Markdown **or** HTML with every image and in-site link
-  rewritten to absolute URLs (using the address you are currently on), so it drops cleanly into WeChat, Juejin,
-  Zhihu or another blog. Uploaded images are served with cross-origin headers and **no Referer check**, so other
-  platforms can embed them too. Body links always open in a new tab, and published posts get a “view post” shortcut
-  in the editor.
+- **Copy-out friendly.** The editor copies the article as Markdown (for Markdown platforms) or as **WeChat-ready rich
+  text**: every tag carries inline styles, because the WeChat editor strips `class` and external CSS. Images and
+  in-site links become absolute URLs, non-WeChat links are collected into footnotes, and code highlighting is expanded
+  into inline colours. Paste it into the WeChat editor and the formatting survives. Uploaded images are served with
+  cross-origin headers and **no Referer check**, so other platforms can embed them too. Body links always open in a new
+  tab, and published posts get a “view post” shortcut in the editor.
 - **Comments with GitHub login.** `read:user user:email` is requested: the GitHub identity (`github_id`, login, avatar)
   and the account's **verified primary email** are stored in the `users` table — the email is used only for account
   identification and site-operator contact (never shown, never returned by an API, never logged). Each account is
@@ -193,11 +194,15 @@ The prompt only describes the site's existing HTTP API — the very endpoints `/
 | `POST` / `PUT` | `/api/admin/posts` | Create / replace a post |
 | `DELETE` | `/api/admin/posts/:id` | Delete a post |
 | `POST` | `/api/admin/preview` | Render Markdown to HTML |
-| `POST` | `/api/admin/copy-source` | Return portable `{ markdown, html }` with absolute URLs |
+| `POST` | `/api/admin/copy-source` | Return `{ markdown, wechatHtml, wechatText }`; the WeChat variant uses inline styles only |
 | `GET` | `/api/admin/export` | Export every post as JSON |
 | `POST` | `/api/views` | Public: increment a published post's view counter (no auth) |
 
 There is no agent-only protocol and no special token: the agent logs in like the admin page does.
+
+**Publishing to WeChat** — open a post in the editor, click `富文本` (Rich text), then paste into the WeChat editor.
+Inline styles survive the paste, external links become footnotes, and images are absolute URLs fetched by WeChat.
+No theme picker: one theme, tuned for the WeChat reading column.
 
 **Export** — `GET /api/admin/export` returns `{ site, posts: [...] }`, the whole site in one JSON file.
 

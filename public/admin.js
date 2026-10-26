@@ -75,6 +75,68 @@
     });
   }
 
+  /**
+   * 富文本复制：剪贴板里必须同时有 text/html 与 text/plain。
+   * 公众号编辑器只认 text/html —— 之前的 writeText 粘过去只剩纯文本，样式当然全没了。
+   */
+  function copyRichText(html, text) {
+    if (!html) return Promise.reject(new Error("empty_html"));
+    var plain = text || html.replace(/<[^>]+>/g, "");
+    if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+      var item = null;
+      try {
+        item = new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" })
+        });
+      } catch (e) {
+        item = null;
+      }
+      if (item) {
+        return navigator.clipboard.write([item]).catch(function () {
+          return legacyCopyHtml(html);
+        });
+      }
+    }
+    return legacyCopyHtml(html);
+  }
+
+  /**
+   * 退路：把 HTML 放进离屏 contenteditable，选中后 execCommand("copy")。
+   * 浏览器会把选区序列化成 text/html + text/plain，效果与 ClipboardItem 一致。
+   */
+  function legacyCopyHtml(html) {
+    return new Promise(function (resolve, reject) {
+      var holder = document.createElement("div");
+      holder.setAttribute("contenteditable", "true");
+      holder.style.position = "fixed";
+      holder.style.top = "0";
+      holder.style.left = "-99999px";
+      holder.style.opacity = "0";
+      holder.style.pointerEvents = "none";
+      holder.innerHTML = html;
+      document.body.appendChild(holder);
+
+      var ok = false;
+      var range = document.createRange();
+      range.selectNodeContents(holder);
+      var selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try {
+          ok = document.execCommand("copy");
+        } catch (e) {
+          ok = false;
+        }
+        selection.removeAllRanges();
+      }
+      document.body.removeChild(holder);
+      if (ok) resolve();
+      else reject(new Error("copy_failed"));
+    });
+  }
+
   // ── 代码块复制（编辑器预览区也会渲染同样的按钮）──
   document.addEventListener("click", function (event) {
     var btn = event.target.closest("[data-copy-code]");
@@ -554,12 +616,12 @@
 
     // ── 拷贝源码：服务端把图片与站内链接绝对化后返回，前端只负责复制 ──
     // 复制不改编辑器内容：绝对地址只活在这一次拷贝里，正文保持站内相对路径。
+    // 富文本走 text/html 剪贴板；公众号只认这个口味，纯文本粘过去会丢光样式。
     var copySourceButtons = editorPage.querySelectorAll("[data-copy-source]");
     copySourceButtons.forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (!input) return;
-        var format = btn.getAttribute("data-copy-source") === "html" ? "html" : "markdown";
-        var label = format === "html" ? "HTML" : "Markdown";
+        var format = btn.getAttribute("data-copy-source") === "wechat" ? "wechat" : "markdown";
         btn.disabled = true;
         api("/api/admin/copy-source", {
           method: "POST",
@@ -568,10 +630,17 @@
         })
           .then(function (result) {
             if (!result.ok || !result.data) throw new Error("copy_source_failed");
-            return copyText(format === "html" ? result.data.html : result.data.markdown);
+            if (format === "wechat") {
+              return copyRichText(result.data.wechatHtml, result.data.wechatText);
+            }
+            return copyText(result.data.markdown);
           })
           .then(function () {
-            showToast("已复制 " + label + "：图片与站内链接已转为绝对地址");
+            showToast(
+              format === "wechat"
+                ? "已复制富文本，可直接粘贴到公众号"
+                : "已复制 Markdown：图片与站内链接已转为绝对地址"
+            );
           })
           .catch(function () {
             showToast("复制失败，请检查浏览器剪贴板权限");

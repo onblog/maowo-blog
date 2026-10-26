@@ -1,5 +1,3 @@
-import { renderMarkdown } from "./markdown";
-
 /**
  * 拷贝源码（移植到其他平台）。
  *
@@ -82,14 +80,4 @@ export function absolutizeMarkdown(source: string, origin: string): string {
       return `${head}${next}${tail}`;
     },
   );
-}
-
-/**
- * 渲染成「可移植的 HTML」：与文章页同一个渲染器（预览 = 线上），
- * 但去掉站点专属的代码块复制按钮 —— 那是本站的交互，贴到别人家的编辑器里
- * 只剩一段没人能点的 SVG，还会把正文撑出无意义的结构。
- */
-export function portableHtml(source: string, origin: string | null): string {
-  const absolute = origin ? absolutizeMarkdown(source, origin) : source;
-  return renderMarkdown(absolute).replace(/<button class="code-block__copy"[\s\S]*?<\/button>/g, "");
 }

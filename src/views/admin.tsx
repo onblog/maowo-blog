@@ -326,8 +326,10 @@ export function AdminEditorPage({
           <span class="editor-toolbar__spacer" />
           {/*
             拷贝源码：写文章时最常做的「搬出去」动作（公众号 / 掘金 / 知乎 / 其他博客）。
-            复制前由服务端把图片与站内链接改成当前访问地址的绝对 URL，否则贴到外站全是 404。
-            只读当前编辑器里的内容 —— 不要求先保存，写到一半也能拷。
+            · MD：Markdown 原文，给支持 Markdown 的平台；
+            · 富文本：公众号专用 —— 公众号会剥掉 class 与外部样式，所以服务端把样式全部内联，
+              外链折叠成文末脚注，前端以 text/html 写进剪贴板，粘贴即保留排版。
+            两者都会把图片与站内链接改成当前访问地址的绝对 URL；只读编辑器里的内容，不要求先保存。
           */}
           <button
             class="tool tool--copy"
@@ -339,13 +341,13 @@ export function AdminEditorPage({
             MD
           </button>
           <button
-            class="tool tool--copy"
+            class="tool tool--copy tool--copy-text"
             type="button"
-            data-copy-source="html"
-            title={t(locale, "admin.tool.copy_html")}
-            aria-label={t(locale, "admin.tool.copy_html")}
+            data-copy-source="wechat"
+            title={t(locale, "admin.tool.copy_wechat")}
+            aria-label={t(locale, "admin.tool.copy_wechat")}
           >
-            HTML
+            {t(locale, "admin.tool.copy_wechat_label")}
           </button>
           <span class="tool-sep" aria-hidden="true" />
           <button class="tool tool--mode" type="button" data-editor-mode-toggle title={t(locale, "admin.editor.mode_toggle")}>

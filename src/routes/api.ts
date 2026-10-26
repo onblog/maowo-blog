@@ -27,7 +27,8 @@ import {
   setStatus,
 } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, incrementPublishedViews, updatePost } from "../services/posts";
-import { absolutizeMarkdown, normalizeOrigin, portableHtml } from "../lib/copy-source";
+import { absolutizeMarkdown, normalizeOrigin } from "../lib/copy-source";
+import { renderWechatArticle } from "../lib/wechat-html";
 import { parseSensitiveWordList, sensitiveSummaryText } from "../lib/sensitive-words";
 import {
   clearSensitiveWords,
@@ -544,9 +545,13 @@ api.post("/admin/preview", requireAdminApi, async (c) => {
 /**
  * 拷贝源码：把编辑器里的正文按「可移植」的样子返回一份。
  *
- * 返回 `markdown` 与 `html` 两份，前端按按钮各取一份复制 —— 转换必须在服务端做：
- *  · 规则只有一份（`src/lib/copy-source.ts`），测得到；
- *  · HTML 用与文章页**同一个渲染器**，贴出去的结构和线上一致；
+ * 返回两份产物，前端按按钮各取一份复制：
+ *  · `markdown`：原文，图片与站内链接绝对化，给支持 Markdown 的平台；
+ *  · `wechatHtml` / `wechatText`：公众号富文本（全内联样式、外链转脚注）与纯文本兜底。
+ *
+ * 转换必须在服务端做：
+ *  · 规则只有一份（`src/lib/copy-source.ts` + `src/lib/wechat-html.ts`），测得到；
+ *  · 公众号 HTML 用与文章页**同一个渲染器**，再统一展开成内联样式；
  *  · 存储里的正文不被改写，绝对化只活在一次拷贝里。
  *
  * `origin` 由浏览器给（`window.location.origin`，用户选择「始终用当前访问地址」）；
@@ -565,11 +570,18 @@ api.post("/admin/copy-source", requireAdminApi, async (c) => {
   const origin =
     normalizeOrigin(typeof body.origin === "string" ? body.origin : null) ?? new URL(c.req.url).origin;
 
+  // 绝对化只做一次：markdown 原文直接复用，公众号富文本基于同一份绝对地址渲染。
+  // `wechatHtml` 是全内联样式的公众号版本（外链转脚注、代码高亮展开），
+  // 由前台写进 text/html 剪贴板 —— 公众号只认这个口味。
+  const markdown = absolutizeMarkdown(source, origin);
+  const wechat = renderWechatArticle(markdown, null, c.get("locale"));
+
   return c.json({
     ok: true,
     origin,
-    markdown: absolutizeMarkdown(source, origin),
-    html: portableHtml(source, origin),
+    markdown,
+    wechatHtml: wechat.html,
+    wechatText: wechat.text,
   });
 });
 

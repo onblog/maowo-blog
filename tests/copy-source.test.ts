@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { absolutizeMarkdown, normalizeOrigin, portableHtml } from "../src/lib/copy-source";
+import { absolutizeMarkdown, normalizeOrigin } from "../src/lib/copy-source";
 
 /**
  * 拷贝源码的绝对地址转换。
@@ -63,20 +63,5 @@ describe("拷贝源码：图片与链接绝对化", () => {
     expect(normalizeOrigin("data:text/html,x")).toBe(null);
     expect(normalizeOrigin("not a url")).toBe(null);
     expect(normalizeOrigin("")).toBe(null);
-  });
-});
-
-describe("拷贝源码：可移植 HTML", () => {
-  it("用站点同一个渲染器，带高亮与绝对图片地址", () => {
-    const html = portableHtml("![图](/media/a.png)\n\n```js\nconsole.log(1)\n```", ORIGIN);
-    expect(html).toContain("https://blog.test/media/a.png");
-    expect(html).toContain("hljs");
-    // 拷贝出去的 HTML 不带站点专属的复制按钮：那是本站交互，贴到外站只剩一段没人能点的 SVG
-    expect(html).not.toContain("data-copy-code");
-  });
-
-  it("没有 origin 时仍然可以渲染，只是不做绝对化", () => {
-    const html = portableHtml("![图](/media/a.png)", null);
-    expect(html).toContain('src="/media/a.png"');
   });
 });

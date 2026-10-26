@@ -46,6 +46,9 @@ export const messages = {
     "post.author": "关于作者",
     "post.series_belongs": "本文属于合集",
 
+    "wechat.footnotes": "参考链接",
+    "wechat.mermaid_hint": "图表：公众号不支持 Mermaid，请在此处手动插入图片",
+
     "series.title": "全部合集",
     "series.count": "{n} 个合集",
     "series.posts": "{n} 篇",
@@ -161,7 +164,8 @@ export const messages = {
     "admin.tool.link": "链接",
     "admin.tool.image": "插入图片",
     "admin.tool.copy_md": "拷贝 Markdown 源码（图片与站内链接自动转为绝对地址）",
-    "admin.tool.copy_html": "拷贝 HTML 源码（图片与站内链接自动转为绝对地址）",
+    "admin.tool.copy_wechat": "拷贝富文本（内联样式，可直接粘贴到公众号）",
+    "admin.tool.copy_wechat_label": "富文本",
     "admin.editor.slug": "地址（留空自动生成）",
     "admin.editor.content": "正文（Markdown）",
     "admin.editor.excerpt": "摘要（留空自动截取）",
@@ -307,6 +311,9 @@ export const messages = {
     "post.author": "About the author",
     "post.series_belongs": "Part of",
 
+    "wechat.footnotes": "Links",
+    "wechat.mermaid_hint": "Diagram: WeChat cannot render Mermaid. Insert an image here.",
+
     "series.title": "All series",
     "series.count": "{n} series",
     "series.posts": "{n} posts",
@@ -422,7 +429,8 @@ export const messages = {
     "admin.tool.link": "Link",
     "admin.tool.image": "Insert image",
     "admin.tool.copy_md": "Copy Markdown source (images and site links become absolute URLs)",
-    "admin.tool.copy_html": "Copy HTML source (images and site links become absolute URLs)",
+    "admin.tool.copy_wechat": "Copy rich text (inline styles, ready to paste into WeChat)",
+    "admin.tool.copy_wechat_label": "Rich text",
     "admin.editor.slug": "Slug (leave empty to auto-generate)",
     "admin.editor.content": "Content (Markdown)",
     "admin.editor.excerpt": "Excerpt (auto if empty)",
