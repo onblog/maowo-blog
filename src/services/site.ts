@@ -24,15 +24,40 @@ const FALLBACK: SiteRow = {
   updated_at: 0,
 };
 
+/**
+ * 站点资料的读缓存存活时间（毫秒）。
+ *
+ * 站点资料是单行表，却被**每个请求**读一次（middleware/context.ts 要拿它决定语言、
+ * 主题、导航），实测 40 分钟内 43 次 `SELECT * FROM site WHERE id = 1`。
+ * 缓存后每请求省掉一次 D1 往返；60 秒的陈旧窗口只在多 isolate 场景存在，
+ * 单 isolate 内由 `invalidateSiteCache()` 在更新后立即失效。
+ */
+const SITE_CACHE_TTL_MS = 60_000;
+
+let siteCache: { at: number; url: string; row: SiteRow } | null = null;
+
+/** 站点资料变更后主动失效缓存（后台保存、单测隔离都走这里） */
+export function invalidateSiteCache(): void {
+  siteCache = null;
+}
+
 export async function getSite(env: Env): Promise<SiteRow> {
   // 公开地址不进数据库：它由部署时的 SITE_URL 决定，改了数据库也不该变。
   const url = env.SITE_URL.replace(/\/$/, "");
+  const now = Date.now();
+  if (siteCache && siteCache.url === url && now - siteCache.at < SITE_CACHE_TTL_MS) {
+    return siteCache.row;
+  }
+  let row: SiteRow;
   try {
-    const row = await env.DB.prepare("SELECT * FROM site WHERE id = 1").first<SiteRow>();
-    return { ...(row ?? FALLBACK), url };
+    const found = await env.DB.prepare("SELECT * FROM site WHERE id = 1").first<SiteRow>();
+    row = { ...(found ?? FALLBACK), url };
   } catch {
+    // 读失败不写缓存：否则一次抖动会把默认值钉住 60 秒。
     return { ...FALLBACK, url };
   }
+  siteCache = { at: now, url, row };
+  return row;
 }
 
 const EDITABLE = [
@@ -64,6 +89,7 @@ export async function updateSite(env: Env, patch: SitePatch): Promise<SiteRow> {
   )
     .bind(...values, Date.now())
     .run();
+  invalidateSiteCache();
   return getSite(env);
 }
 

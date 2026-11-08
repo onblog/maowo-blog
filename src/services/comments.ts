@@ -73,15 +73,6 @@ export function buildTree(rows: CommentRow[]): CommentNode[] {
   return roots;
 }
 
-export async function countForPost(env: Env, postId: string): Promise<number> {
-  const row = await env.DB.prepare(
-    "SELECT COUNT(*) AS n FROM comments WHERE post_id = ? AND status = 'visible'",
-  )
-    .bind(postId)
-    .first<{ n: number }>();
-  return row?.n ?? 0;
-}
-
 export type CreateCommentInput = {
   postId: string;
   parentId: string | null;

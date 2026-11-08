@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { renderMarkdownWithToc } from "../lib/markdown";
+import { renderPostBody } from "../lib/post-render";
 import type { AppEnv } from "../types";
 import { getSite, parseLinks } from "../services/site";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../services/posts";
 import { listTags, getTagBySlug } from "../services/tags";
 import { getSeriesBySlug, listSeries, listSeriesPosts } from "../services/series";
-import { buildTree, countForPost, listVisible } from "../services/comments";
+import { buildTree, listVisible } from "../services/comments";
 import { HomePage } from "../views/home";
 import { AboutPage, ArchivePage, LinksPage, NotFoundPage, SeriesListPage, SeriesPage, TagPage, TagsPage } from "../views/pages";
 import { PostPage } from "../views/post";
@@ -86,12 +86,12 @@ pages.get("/p/:slug", async (c) => {
   const post = await getPublishedBySlug(c.env, slug);
   if (!post) return c.html(<NotFoundPage {...baseProps(c)} />, 404);
 
-  const { html, toc } = renderMarkdownWithToc(post.content_md);
-  const [neighbours, commentRows, commentCount] = await Promise.all([
+  const [rendered, neighbours, commentRows] = await Promise.all([
+    renderPostBody(post),
     getNeighbours(c.env, post),
     listVisible(c.env, post.id),
-    countForPost(c.env, post.id),
   ]);
+  const { html, toc } = rendered;
 
   // 浏览量不再在这里自增：页面每次 SSR 都 +1 会把同一个人刷新十次算成十个读者。
   // 现在由前台脚本带 localStorage 去重后调 `POST /api/views` 递增（见 public/app.js）。
@@ -104,7 +104,7 @@ pages.get("/p/:slug", async (c) => {
       prev={neighbours.prev}
       next={neighbours.next}
       comments={buildTree(commentRows)}
-      commentCount={commentCount}
+      commentCount={commentRows.length}
     />,
   );
 });
