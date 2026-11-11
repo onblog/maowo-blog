@@ -557,6 +557,20 @@ body.search-open {
   border-radius: 999px;
   background: var(--hairline-strong);
 }
+/* 还能继续往下滚时，底部渐隐提示"下面还有"；滚到底后由 JS 去掉 */
+.search--more .search__body {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+}
+/* 已经往下滚了，顶部也渐隐，避免第一行被生生切断 */
+.search--scrolled .search__body {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 26px);
+  mask-image: linear-gradient(to bottom, transparent, #000 26px);
+}
+.search--more.search--scrolled .search__body {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 26px, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 26px, #000 calc(100% - 26px), transparent);
+}
 .search [hidden] {
   display: none !important;
 }

@@ -83,12 +83,23 @@
       if (clearBtn) clearBtn.hidden = input.value.length === 0;
     }
 
+    // 结果列表还能往下滚时，在底部做一层渐隐；到底后取消，最后一条不会被永久压暗
+    function syncScrollHint() {
+      if (!bodyEl) return;
+      var more =
+        bodyEl.scrollHeight > bodyEl.clientHeight + 4 &&
+        bodyEl.scrollTop + bodyEl.clientHeight < bodyEl.scrollHeight - 4;
+      dialog.classList.toggle("search--more", more);
+      dialog.classList.toggle("search--scrolled", bodyEl.scrollTop > 4);
+    }
+
     function reset() {
       hits = [];
       renderedQuery = "";
       resultsEl.innerHTML = "";
       resultsEl.hidden = true;
       if (bodyEl) bodyEl.scrollTop = 0;
+      dialog.classList.remove("search--more", "search--scrolled");
       if (seeAll) seeAll.hidden = true;
       if (placeholder) placeholder.hidden = false;
       if (placeholderText) placeholderText.textContent = i18n.hint;
@@ -189,6 +200,7 @@
         }
       }
       setStatus(fill(i18n.count, "n", data.total));
+      window.requestAnimationFrame(syncScrollHint);
     }
 
     function fail() {
@@ -198,6 +210,7 @@
       resultsEl.hidden = true;
       hits = [];
       renderedQuery = "";
+      dialog.classList.remove("search--more", "search--scrolled");
       if (seeAll) seeAll.hidden = true;
       if (placeholder) placeholder.hidden = false;
       if (placeholderText) placeholderText.textContent = i18n.hint;
@@ -273,10 +286,14 @@
         input.focus();
         // 预填查询时把光标放到末尾，方便继续改词；全选会在暗色下留一块刺眼的系统高亮
         if (input.value) input.setSelectionRange(input.value.length, input.value.length);
+        syncScrollHint();
       });
     }
 
     trigger.addEventListener("click", open);
+
+    if (bodyEl) bodyEl.addEventListener("scroll", syncScrollHint, { passive: true });
+    window.addEventListener("resize", syncScrollHint);
 
     if (closeBtn) {
       closeBtn.addEventListener("click", function () {
