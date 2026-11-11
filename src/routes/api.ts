@@ -27,6 +27,8 @@ import {
   setStatus,
 } from "../services/comments";
 import { createPost, deletePost, getById, getPublishedBySlug, incrementPublishedViews, updatePost } from "../services/posts";
+import { formatDate } from "../lib/brand";
+import { searchPublished } from "../services/search";
 import { absolutizeMarkdown, normalizeOrigin } from "../lib/copy-source";
 import { renderWechatArticle } from "../lib/wechat-html";
 import { parseSensitiveWordList, sensitiveSummaryText } from "../lib/sensitive-words";
@@ -121,6 +123,45 @@ api.post("/views", async (c) => {
 
   // visitorId 只表示「前端确实生成了一个稳定 ID」；服务端不落库、不记录、不返回。
   return c.json({ ok: true, views });
+});
+
+// ── 站内搜索（读者端）──────────────────────────────────────────────────────
+//
+// 浮层每输入一次就请求一次，所以结果里带的是**已经格式化好的日期**：
+// 前端不需要再复制一份中英文日期规则，日期格式永远和列表页一致。
+// 每次搜索都是一次正文 LIKE 扫描，公开只读也不能完全不设防：
+// 120 次/分钟够真人连续输入，冷启动重置只影响脚本，不影响正常读者。
+const searchCalls = new Map<string, { count: number; resetAt: number }>();
+const SEARCH_MAX_PER_MINUTE = 120;
+const SEARCH_WINDOW_MS = 60 * 1000;
+
+function allowSearch(ip: string): boolean {
+  const now = Date.now();
+  const entry = searchCalls.get(ip);
+  if (!entry || entry.resetAt < now) {
+    searchCalls.set(ip, { count: 1, resetAt: now + SEARCH_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= SEARCH_MAX_PER_MINUTE) return false;
+  entry.count += 1;
+  return true;
+}
+
+api.get("/search", async (c) => {
+  if (!allowSearch(clientIp(c))) return c.json({ error: "too_fast" }, 429);
+
+  const result = await searchPublished(c.env, c.req.query("q") ?? "", 8);
+  c.header("cache-control", "no-store");
+  return c.json({
+    ok: true,
+    query: result.query,
+    terms: result.terms,
+    total: result.total,
+    hits: result.hits.map((hit) => ({
+      ...hit,
+      date: formatDate(hit.publishedAt, c.get("locale")),
+    })),
+  });
 });
 
 // ── 评论 ────────────────────────────────────────────────────────────────────

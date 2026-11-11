@@ -13,8 +13,10 @@ import {
 import { listTags, getTagBySlug } from "../services/tags";
 import { getSeriesBySlug, listSeries, listSeriesPosts } from "../services/series";
 import { buildTree, listVisible } from "../services/comments";
+import { searchPublished } from "../services/search";
 import { HomePage } from "../views/home";
 import { AboutPage, ArchivePage, LinksPage, NotFoundPage, SeriesListPage, SeriesPage, TagPage, TagsPage } from "../views/pages";
+import { SearchPage } from "../views/search";
 import { PostPage } from "../views/post";
 
 /** 前台页面路由。`/:slug` 必须是最后一个注册的（兜底文章地址）。 */
@@ -78,6 +80,15 @@ pages.get("/about", async (c) => {
 pages.get("/links", async (c) => {
   const site = await getSite(c.env);
   return c.html(<LinksPage {...baseProps(c)} links={parseLinks(site.owner_links)} />);
+});
+
+// 站内搜索：浮层的兜底页，也能直接分享结果链接。
+// 搜索结果页没有检索价值，noindex 同时写在 meta 与响应头里。
+pages.get("/search", async (c) => {
+  const result = await searchPublished(c.env, c.req.query("q") ?? "", 30);
+  c.header("cache-control", "no-store");
+  c.header("x-robots-tag", "noindex");
+  return c.html(<SearchPage {...baseProps(c)} result={result} />);
 });
 
 // 文章详情：固定在 /p/{数字} 下 —— 与 /archive、/about、/series 这些静态页彻底分开

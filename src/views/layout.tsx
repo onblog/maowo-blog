@@ -26,6 +26,8 @@ export type LayoutProps = {
   canonicalPath?: string;
   ogType?: "website" | "article";
   ogImage?: string | null;
+  /** 搜索结果页这类「有内容但不该被索引」的页面用 */
+  noindex?: boolean;
   activeNav?: "home" | "series" | "archive" | "tags" | "about" | "links" | "post";
   children: Child;
 };
@@ -94,6 +96,23 @@ function RssIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M5 19a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" fill="currentColor" />
       <path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </svg>
+  );
+}
+
+function SearchIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2" />
+      <path d="m16 16 4.4 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
     </svg>
   );
 }
@@ -173,6 +192,112 @@ function CatRope({ locale }: { locale: Locale }) {
   );
 }
 
+/**
+ * 站内搜索浮层。
+ *
+ * 用原生 `<dialog>` 只是为了拿 top-layer、焦点陷阱和 Esc —— 外观、输入框、按钮、
+ * 空状态全部自绘，不出现任何浏览器默认控件。
+ * 顶栏入口是一个指向 `/search` 的链接：脚本没跑（或被禁用）时直接去兜底页，
+ * 不会留下一个「点了没反应」的死按钮。
+ */
+function SearchDialog({ locale }: { locale: Locale }) {
+  return (
+    <dialog
+      class="search"
+      id="site-search"
+      data-search-dialog
+      aria-labelledby="site-search-title"
+      data-i18n-count={t(locale, "search.count")}
+      data-i18n-empty={t(locale, "search.empty")}
+      data-i18n-loading={t(locale, "search.loading")}
+      data-i18n-error={t(locale, "search.error")}
+      data-i18n-hint={t(locale, "search.hint")}
+      data-i18n-all={t(locale, "search.all")}
+      data-i18n-reading={t(locale, "post.reading_time")}
+    >
+      <div class="search__panel">
+        <h2 class="sr-only" id="site-search-title">
+          {t(locale, "search.title")}
+        </h2>
+
+        <form class="search__form" action="/search" method="get" role="search" data-search-form>
+          <span class="search__glyph" aria-hidden="true">
+            <SearchIcon size={19} />
+          </span>
+          <input
+            class="search__input"
+            type="text"
+            name="q"
+            maxlength={64}
+            placeholder={t(locale, "search.placeholder")}
+            aria-label={t(locale, "search.title")}
+            autocomplete="off"
+            spellcheck={false}
+            autocapitalize="off"
+            inputmode="search"
+            enterkeyhint="search"
+            data-search-input
+          />
+          <button
+            class="search__clear"
+            type="button"
+            data-search-clear
+            aria-label={t(locale, "search.clear")}
+            title={t(locale, "search.clear")}
+            hidden
+          >
+            <CloseIcon size={14} />
+          </button>
+          <button
+            class="search__cancel"
+            type="button"
+            data-search-close
+            title={t(locale, "search.close")}
+          >
+            {t(locale, "search.cancel")}
+          </button>
+          <button class="sr-only" type="submit">
+            {t(locale, "search.submit")}
+          </button>
+        </form>
+
+        <div class="search__meta">
+          <span class="search__status" role="status" aria-live="polite" data-search-status />
+          <a class="search__seeall" data-search-seeall href="/search" hidden></a>
+        </div>
+
+        <div class="search__body" data-search-body>
+          <div class="search__placeholder" data-search-placeholder>
+            <span class="search__placeholder-icon" aria-hidden="true">
+              <SearchIcon size={30} />
+            </span>
+            <p class="search__placeholder-text" data-search-placeholder-text>
+              {t(locale, "search.hint")}
+            </p>
+          </div>
+          <ul class="search__results" data-search-results role="list" hidden></ul>
+        </div>
+
+        <div class="search__foot">
+          <span class="search__kbd">
+            <kbd>↑</kbd>
+            <kbd>↓</kbd>
+            {t(locale, "search.kbd_move")}
+          </span>
+          <span class="search__kbd">
+            <kbd>Enter</kbd>
+            {t(locale, "search.kbd_open")}
+          </span>
+          <span class="search__kbd">
+            <kbd>Esc</kbd>
+            {t(locale, "search.kbd_close")}
+          </span>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 export function Layout(props: LayoutProps) {
   const { site, locale, colorMode, reader, title, description, canonicalPath, ogType, ogImage } = props;
   const name = siteName(site);
@@ -199,6 +324,7 @@ export function Layout(props: LayoutProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{fullTitle}</title>
         {desc ? <meta name="description" content={desc} /> : null}
+        {props.noindex ? <meta name="robots" content="noindex, follow" /> : null}
         <meta name="generator" content="maowo-blog" />
         <meta name="color-scheme" content="light dark" />
         <meta name="theme-color" content={colorMode === "dark" ? "#17161a" : "#fdfbf3"} />
@@ -237,6 +363,18 @@ export function Layout(props: LayoutProps) {
               ))}
             </nav>
             <div class="header-actions">
+              {/* 搜索入口放在主题图标左边：先找内容，再调外观 */}
+              <a
+                class="icon-btn"
+                href="/search"
+                data-search-open
+                title={t(locale, "search.open")}
+                aria-label={t(locale, "search.open")}
+                aria-haspopup="dialog"
+                aria-controls="site-search"
+              >
+                <SearchIcon />
+              </a>
               {/* 读者行为：手动切换亮/暗，覆盖方式写在 localStorage，优先级高于站点默认 */}
               <button
                 class="icon-btn"
@@ -301,10 +439,12 @@ export function Layout(props: LayoutProps) {
           </div>
         </footer>
 
+        <SearchDialog locale={locale} />
+
         <script src={`/app.js?v=${ASSET_VERSION}`} defer />
       </body>
     </html>
   );
 }
 
-export { Mascot, GithubIcon, RssIcon, MoonIcon, SunIcon };
+export { Mascot, GithubIcon, RssIcon, SearchIcon, MoonIcon, SunIcon };

@@ -52,6 +52,9 @@ That is the feature.
 - **Cute by shell, serious by content.** Rounded cards, a hand-drawn cat mascot, and a reading layout tuned for Chinese
   and Latin text alike. One look, done properly — no theme marketplace to configure.
 - **Light and dark**, decided before first paint (inline script), following the system until the reader chooses.
+- **Search that stays out of the way.** A magnifier in the header opens a live overlay over the current page. Results
+  come from post titles, tags, and full text, are keyboard-navigable, and every query also has a shareable
+  `/search?q=` fallback page that works without JavaScript.
 - **Reading counter without a tracking script.** Every post shows how many distinct browsers have read it. The browser
   generates a visitor ID, stores `path → visitorId` in `localStorage`, and only calls `POST /api/views` the first time;
   the server just increments `posts.views`. No cookies, no analytics vendor, no visitor table.

@@ -26,6 +26,345 @@
     });
   });
 
+  // ── 站内搜索：顶栏放大镜 → 浮层 ──────────────────────────────────────
+  /*
+   * 入口本身是 <a href="/search">：脚本可用时拦下点击开浮层，脚本不可用就直接去兜底页。
+   * 输入停 220ms 才请求；旧请求用 AbortController 取消、响应按序号丢弃，
+   * 避免「先发的慢请求」覆盖「后发的快请求」。
+   */
+  (function () {
+    var trigger = document.querySelector("[data-search-open]");
+    var dialog = document.querySelector("[data-search-dialog]");
+    if (!trigger || !dialog || typeof dialog.showModal !== "function") return;
+
+    var form = dialog.querySelector("[data-search-form]");
+    var input = dialog.querySelector("[data-search-input]");
+    var clearBtn = dialog.querySelector("[data-search-clear]");
+    var closeBtn = dialog.querySelector("[data-search-close]");
+    var statusEl = dialog.querySelector("[data-search-status]");
+    var resultsEl = dialog.querySelector("[data-search-results]");
+    var bodyEl = dialog.querySelector("[data-search-body]");
+    var placeholder = dialog.querySelector("[data-search-placeholder]");
+    var placeholderText = dialog.querySelector("[data-search-placeholder-text]");
+    var seeAll = dialog.querySelector("[data-search-seeall]");
+    if (!form || !input || !resultsEl) return;
+
+    var i18n = {
+      count: dialog.getAttribute("data-i18n-count") || "找到 {n} 篇文章",
+      empty: dialog.getAttribute("data-i18n-empty") || "没有找到与「{q}」相关的文章",
+      loading: dialog.getAttribute("data-i18n-loading") || "搜索中…",
+      error: dialog.getAttribute("data-i18n-error") || "搜索失败了，请稍后再试",
+      hint: dialog.getAttribute("data-i18n-hint") || "输入关键词",
+      all: dialog.getAttribute("data-i18n-all") || "查看全部 {n} 条结果",
+      reading: dialog.getAttribute("data-i18n-reading") || "{n} 分钟阅读"
+    };
+
+    var timer = null;
+    var controller = null;
+    var seq = 0;
+    var hits = [];
+    var renderedQuery = "";
+
+    function fill(template, key, value) {
+      return template.replace("{" + key + "}", String(value));
+    }
+
+    function setStatus(text) {
+      if (statusEl) statusEl.textContent = text || "";
+    }
+
+    function setBusy(busy) {
+      dialog.classList.toggle("search--busy", !!busy);
+      dialog.setAttribute("aria-busy", busy ? "true" : "false");
+      resultsEl.setAttribute("aria-busy", busy ? "true" : "false");
+    }
+
+    function syncClear() {
+      if (clearBtn) clearBtn.hidden = input.value.length === 0;
+    }
+
+    function reset() {
+      hits = [];
+      renderedQuery = "";
+      resultsEl.innerHTML = "";
+      resultsEl.hidden = true;
+      if (bodyEl) bodyEl.scrollTop = 0;
+      if (seeAll) seeAll.hidden = true;
+      if (placeholder) placeholder.hidden = false;
+      if (placeholderText) placeholderText.textContent = i18n.hint;
+      setStatus("");
+      setBusy(false);
+    }
+
+    function escapeRegExp(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    /** 关键词高亮：用 DOM 节点拼接，不碰 innerHTML */
+    function highlight(text, terms) {
+      var frag = document.createDocumentFragment();
+      var valid = (terms || []).filter(Boolean);
+      if (!valid.length) {
+        frag.appendChild(document.createTextNode(String(text)));
+        return frag;
+      }
+      valid.sort(function (a, b) {
+        return b.length - a.length;
+      });
+      var pattern = new RegExp("(" + valid.map(escapeRegExp).join("|") + ")", "gi");
+      String(text)
+        .split(pattern)
+        .forEach(function (part, index) {
+          if (!part) return;
+          if (index % 2 === 1) {
+            var mark = document.createElement("mark");
+            mark.className = "search-mark";
+            mark.textContent = part;
+            frag.appendChild(mark);
+          } else {
+            frag.appendChild(document.createTextNode(part));
+          }
+        });
+      return frag;
+    }
+
+    function render(data) {
+      hits = Array.isArray(data.hits) ? data.hits : [];
+      renderedQuery = data.query || "";
+      resultsEl.innerHTML = "";
+      // 新结果从顶部开始看，别保留上一轮滚到的位置
+      if (bodyEl) bodyEl.scrollTop = 0;
+      setBusy(false);
+
+      if (!hits.length) {
+        resultsEl.hidden = true;
+        if (placeholder) placeholder.hidden = false;
+        if (placeholderText) placeholderText.textContent = fill(i18n.empty, "q", renderedQuery);
+        if (seeAll) seeAll.hidden = true;
+        setStatus(fill(i18n.count, "n", data.total || 0));
+        return;
+      }
+
+      if (placeholder) placeholder.hidden = true;
+      resultsEl.hidden = false;
+
+      hits.forEach(function (hit) {
+        var li = document.createElement("li");
+        li.className = "search__item";
+
+        var link = document.createElement("a");
+        link.className = "search__hit";
+        link.href = "/p/" + encodeURIComponent(hit.slug);
+        link.setAttribute("data-search-hit", "");
+
+        var title = document.createElement("span");
+        title.className = "search__hit-title";
+        title.appendChild(highlight(hit.title, data.terms));
+        link.appendChild(title);
+
+        if (hit.snippet) {
+          var snippet = document.createElement("span");
+          snippet.className = "search__hit-snippet";
+          snippet.appendChild(highlight(hit.snippet, data.terms));
+          link.appendChild(snippet);
+        }
+
+        var meta = document.createElement("span");
+        meta.className = "search__hit-meta";
+        meta.textContent =
+          (hit.date ? hit.date + " · " : "") + fill(i18n.reading, "n", hit.readingMinutes);
+        link.appendChild(meta);
+
+        li.appendChild(link);
+        resultsEl.appendChild(li);
+      });
+
+      if (seeAll) {
+        if (data.total > hits.length) {
+          seeAll.hidden = false;
+          seeAll.href = "/search?q=" + encodeURIComponent(renderedQuery);
+          seeAll.textContent = fill(i18n.all, "n", data.total);
+        } else {
+          seeAll.hidden = true;
+        }
+      }
+      setStatus(fill(i18n.count, "n", data.total));
+    }
+
+    function fail() {
+      setBusy(false);
+      setStatus(i18n.error);
+      resultsEl.innerHTML = "";
+      resultsEl.hidden = true;
+      hits = [];
+      renderedQuery = "";
+      if (seeAll) seeAll.hidden = true;
+      if (placeholder) placeholder.hidden = false;
+      if (placeholderText) placeholderText.textContent = i18n.hint;
+    }
+
+    function request(query) {
+      var mySeq = ++seq;
+      if (controller) controller.abort();
+      controller = typeof AbortController === "function" ? new AbortController() : null;
+      setBusy(true);
+      setStatus(i18n.loading);
+
+      fetch("/api/search?q=" + encodeURIComponent(query), controller ? { signal: controller.signal } : undefined)
+        .then(function (res) {
+          if (!res.ok) throw new Error("http_" + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (mySeq !== seq) return;
+          if (!data || data.ok !== true) throw new Error("bad_payload");
+          render(data);
+        })
+        .catch(function (err) {
+          if (err && err.name === "AbortError") return;
+          if (mySeq !== seq) return;
+          fail();
+        });
+    }
+
+    function schedule(query, immediate) {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      // 输入一变就让上一轮请求失效：否则慢的旧结果可能在 220ms 防抖窗口里抢先渲染
+      seq += 1;
+      if (controller) controller.abort();
+
+      var value = query.trim();
+      if (!value) {
+        reset();
+        return;
+      }
+      if (immediate) {
+        request(value);
+        return;
+      }
+      timer = setTimeout(function () {
+        timer = null;
+        request(value);
+      }, 220);
+    }
+
+    function open(event) {
+      if (event.button !== undefined && event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+
+      if (!dialog.open) {
+        dialog.showModal();
+        document.body.classList.add("search-open");
+        // 从 /search?q= 打开时把当前查询带进浮层，避免用户再打一遍
+        if (!input.value && window.location.pathname === "/search") {
+          var initial = new URLSearchParams(window.location.search).get("q") || "";
+          if (initial) {
+            input.value = initial.slice(0, 64);
+            syncClear();
+            schedule(input.value, true);
+          }
+        }
+      }
+      window.requestAnimationFrame(function () {
+        input.focus();
+        // 预填查询时把光标放到末尾，方便继续改词；全选会在暗色下留一块刺眼的系统高亮
+        if (input.value) input.setSelectionRange(input.value.length, input.value.length);
+      });
+    }
+
+    trigger.addEventListener("click", open);
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        dialog.close();
+      });
+    }
+
+    dialog.addEventListener("click", function (event) {
+      // 点遮罩关闭：dialog 自身铺满视口，点击落在面板外时 target 就是 dialog
+      if (event.target === dialog) dialog.close();
+    });
+
+    dialog.addEventListener("close", function () {
+      document.body.classList.remove("search-open");
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (controller) controller.abort();
+      setBusy(false);
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        input.value = "";
+        syncClear();
+        schedule("", true);
+        input.focus();
+      });
+    }
+
+    input.addEventListener("input", function () {
+      syncClear();
+      schedule(input.value, false);
+    });
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key !== "ArrowDown") return;
+      var first = resultsEl.querySelector("[data-search-hit]");
+      if (first) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    resultsEl.addEventListener("keydown", function (event) {
+      var current = event.target && event.target.closest ? event.target.closest("[data-search-hit]") : null;
+      if (!current) return;
+      var links = Array.prototype.slice.call(resultsEl.querySelectorAll("[data-search-hit]"));
+      var index = links.indexOf(current);
+
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (event.key === "ArrowUp" && index <= 0) {
+          input.focus();
+          return;
+        }
+        var next = links[index + (event.key === "ArrowDown" ? 1 : -1)];
+        if (next) next.focus();
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dialog.close();
+      }
+    });
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var value = input.value.trim();
+      if (!value) {
+        input.focus();
+        return;
+      }
+      // 结果已对应当前输入时，Enter 直接打开第一条；否则去兜底页看完整结果
+      if (renderedQuery === value && hits.length) {
+        var first = resultsEl.querySelector("[data-search-hit]");
+        if (first && first.href) {
+          window.location.href = first.href;
+          return;
+        }
+      }
+      window.location.href = "/search?q=" + encodeURIComponent(value);
+    });
+
+    syncClear();
+  })();
+
   // ── 轻量 toast：顶部滑入，3 秒后淡出 ─────────────────────────────────
   function showToast(message) {
     var toast = document.createElement("div");
