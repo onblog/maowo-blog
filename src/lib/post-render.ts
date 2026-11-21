@@ -5,6 +5,15 @@ export type RenderedPost = { html: string; toc: TocItem[] };
 /**
  * 正文渲染的缓存键前缀（仅作 Cache API 内部键，不会被真正访问）。
  *
+ * ⚠️ 这个假域名会出现在 Cloudflare 的请求分析（httpRequestsAdaptiveGroups）里：
+ * `match()` 未命中被记成 **504**、`put()` 被记成 **204**、命中是 **200**。
+ * 所以 `post-render.internal` 上的 504 是**缓存未命中，不是错误**，统计 5xx 时必须排除它
+ * （它连 inbound 流量都不算）。2026-11-20 的 148 个 key 里有 115 个同时出现 504 和 204，
+ * 就是这个原因，别再当故障查了。
+ *
+ * 未命中偏多也是正常的：Cache API 是每个 colo 各自一份，长尾文章一天就一两次访问，
+ * 每个机房都要先付一次渲染成本；同机房重复访问由下面的内存层挡住。
+ *
  * 为什么需要缓存：渲染要跑 markdown-it + highlight.js，一篇 100 KB、上百个代码块的
  * 文章实测中位 69.6 ms CPU，而 Free 计划的每请求 CPU 上限是 10 ms —— 每次访问都重渲染
  * 等于把每个读者都放在超限边缘。
